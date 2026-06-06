@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <title>@yield('title', config('app.name', 'EUROCHAM Vote'))</title>
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body class="h-full bg-slate-50 text-slate-800 antialiased">
+    <div class="min-h-full flex flex-col">
+        <header class="bg-white border-b border-slate-200">
+            <div class="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
+                <a href="{{ url('/') }}" class="flex items-center gap-3">
+                    <span class="text-lg font-semibold tracking-tight text-slate-900">EUROCHAM Sénégal</span>
+                    <span class="hidden sm:inline text-sm text-slate-500">Vote électronique — AG 2026</span>
+                </a>
+                @yield('header-actions')
+            </div>
+        </header>
+
+        <main class="flex-1">
+            <div class="mx-auto max-w-5xl px-4 py-8">
+                @if (session('status'))
+                    <div class="mb-6 rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-800 border border-emerald-200">
+                        {{ session('status') }}
+                    </div>
+                @endif
+
+                @if ($errors->any())
+                    <div class="mb-6 rounded-md bg-red-50 px-4 py-3 text-sm text-red-800 border border-red-200">
+                        <ul class="list-disc list-inside space-y-1">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                @yield('content')
+            </div>
+        </main>
+
+        <footer class="border-t border-slate-200 bg-white">
+            <div class="mx-auto max-w-5xl px-4 py-4 text-center text-xs text-slate-400">
+                EUROCHAM Sénégal — Assemblée Générale du 18 juin 2026 · Réf. P01.EUROCHAM.2026
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
