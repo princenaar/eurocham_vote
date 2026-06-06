@@ -2,24 +2,28 @@
 
 namespace Database\Seeders;
 
+use App\Models\Election;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Admin back-office account. Override the dev password via ADMIN_PASSWORD in .env.
+        User::query()->updateOrCreate(
+            ['email' => env('ADMIN_EMAIL', 'admin@eurocham.sn')],
+            [
+                'name' => 'Administrateur EUROCHAM',
+                'password' => Hash::make(env('ADMIN_PASSWORD', 'eurocham2026')),
+            ],
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Ensure the single configurable scrutin exists (window closed by default).
+        Election::current();
     }
 }

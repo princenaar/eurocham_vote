@@ -51,13 +51,19 @@ Design the schema; enforce constraints in DB where possible.
 
 ## Phase 2 — Back-office (admin)
 
-- [ ] Auth-protected admin area (login/password).
-- [ ] Import eligible companies from Excel/CSV (Laravel Excel), with validation + error report.
-- [ ] CRUD candidates; auto-detect Mode A vs B from count (> 20 → A, ≤ 20 → B).
-- [ ] Generate + display QR code; remote **activate/deactivate** voting window in real time.
-- [ ] Live dashboard: voter count + participation rate.
-- [ ] Per-candidate results table.
-- [ ] Export results to Excel + PDF (DomPDF).
+- [x] Auth-protected admin area (login/password) — `Admin\AuthController`, `auth` middleware,
+      guests redirected to `admin.login`. Seeded admin (`admin@eurocham.sn` / `eurocham2026`,
+      overridable via `ADMIN_EMAIL`/`ADMIN_PASSWORD`).
+- [x] Import eligible companies from Excel/CSV (`CompaniesImport`, Laravel Excel): flexible French
+      headers, boolean parsing, upsert by normalized name, error report for invalid rows.
+- [x] CRUD candidates; auto Mode A/B from count (`Election::syncModeFromCandidates()`, > threshold → A,
+      ≤ threshold → B; Mode B flags all `auto_elected`).
+- [x] Generate + display QR code (SVG, no image ext needed); remote **toggle** voting window + QR.
+- [x] Live dashboard: company/candidate/vote counts + participation rate vs eligible.
+- [x] Per-candidate results table (ranked by voix).
+- [x] Export results to Excel (`ResultsExport`) + PDF (DomPDF, French/DejaVu) — verified valid output.
+- All admin actions write to the append-only `audit_logs` via `Support\AuditLogger`.
+- Tests: `ElectionModeTest`, `AdminAccessTest`, `CompaniesImportTest` (11 passing).
 
 ## Phase 3 — Voter flow (QR-gated, public)
 
