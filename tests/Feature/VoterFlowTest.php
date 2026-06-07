@@ -4,6 +4,7 @@ use App\Models\Candidate;
 use App\Models\Company;
 use App\Models\Election;
 use App\Models\Vote;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * QR-gated public voter flow — server-side enforcement of every electoral rule
@@ -215,6 +216,31 @@ it('short-circuits to the auto-election result in Mode B without a ballot', func
     // No ballot is offered in Mode B.
     $this->get(route('vote.ballot'))->assertRedirect(route('vote.start'));
     expect(Vote::count())->toBe(0);
+});
+
+it('serialises submission per company: a held lock blocks a concurrent submit', function () {
+    modeAElection(threshold: 3, candidates: 5);
+    $company = eligibleCompany();
+    $chosen = Candidate::query()->take(3)->pluck('id')->all();
+
+    $this->post(route('vote.identify'), [
+        'company_id' => $company->id,
+        'last_name' => 'Diop',
+        'first_name' => 'Awa',
+    ]);
+
+    // Simulate a concurrent, in-flight submission already holding the per-company lock.
+    $lock = Cache::lock("vote:company:{$company->id}:round:1", 10);
+    expect($lock->get())->toBeTrue();
+
+    // The submit can't acquire the lock within its short window → block-and-retry message,
+    // and crucially no vote is written.
+    $this->post(route('vote.submit'), ['candidates' => $chosen])
+        ->assertSessionHasErrors('candidates');
+
+    expect(Vote::count())->toBe(0);
+
+    $lock->release();
 });
 
 it('refuses to submit when the window closes mid-session', function () {

@@ -8,9 +8,11 @@ use App\Models\Election;
 use App\Models\Vote;
 use App\Models\VoteSelection;
 use App\Support\AuditLogger;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -158,8 +160,12 @@ class VoteController extends Controller
 
     /**
      * Final submit (rules 5 & 6). Re-checks window + eligibility + not-voted, then writes
-     * the vote and its selections atomically with a unique timestamped reference number.
-     * The DB UNIQUE(company_id) is the last line of defence against a double vote.
+     * the vote and its selections with a unique timestamped reference number.
+     *
+     * Anti-double-vote under concurrency (Phase 5): the write is serialised per
+     * company+round by an atomic lock (Redis in prod, the configured store locally), with
+     * a not-yet-voted re-check *inside* the lock so simultaneous requests can't both pass.
+     * The DB UNIQUE(company_id, round) remains the ultimate guarantee.
      */
     public function submit(Request $request): RedirectResponse
     {
@@ -173,30 +179,47 @@ class VoteController extends Controller
 
         $proxy = $request->session()->get(self::SESSION_PROXY);
         $representative = $request->session()->get(self::SESSION_REP);
-        $reference = $this->generateReference();
         $round = $election->current_round;
 
+        $lock = Cache::lock("vote:company:{$company->id}:round:{$round}", 10);
+
         try {
-            DB::transaction(function () use ($company, $round, $proxy, $reference, $chosen) {
-                $vote = Vote::create([
-                    'company_id' => $company->id,
-                    'round' => $round,
-                    'proxy_company_name' => $proxy,
-                    'reference_number' => $reference,
-                    'voted_at' => now(),
-                ]);
+            // Wait briefly for a concurrent submission to finish, then proceed.
+            $reference = $lock->block(3, function () use ($company, $round, $proxy, $chosen) {
+                $this->assertNotYetVoted($company, $round);
 
-                $rows = array_map(fn (int $candidateId) => [
-                    'vote_id' => $vote->id,
-                    'candidate_id' => $candidateId,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ], $chosen);
+                $reference = $this->generateReference();
 
-                VoteSelection::insert($rows);
+                DB::transaction(function () use ($company, $round, $proxy, $reference, $chosen) {
+                    $vote = Vote::create([
+                        'company_id' => $company->id,
+                        'round' => $round,
+                        'proxy_company_name' => $proxy,
+                        'reference_number' => $reference,
+                        'voted_at' => now(),
+                    ]);
+
+                    $rows = array_map(fn (int $candidateId) => [
+                        'vote_id' => $vote->id,
+                        'candidate_id' => $candidateId,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ], $chosen);
+
+                    VoteSelection::insert($rows);
+                });
+
+                return $reference;
             });
+        } catch (LockTimeoutException) {
+            // Could not get the per-company lock in time — ask the voter to retry rather
+            // than risk a partial or duplicate write. The session is preserved.
+            throw ValidationException::withMessages([
+                'candidates' => 'Le système est momentanément occupé. '
+                    .'Veuillez réessayer dans quelques instants.',
+            ]);
         } catch (UniqueConstraintViolationException) {
-            // A concurrent submission won the race on UNIQUE(company_id).
+            // Belt-and-suspenders: the DB UNIQUE caught a duplicate the lock somehow missed.
             $this->clearVoterSession($request);
 
             throw ValidationException::withMessages([
@@ -263,6 +286,20 @@ class VoteController extends Controller
         }
 
         return [$election, $company];
+    }
+
+    /**
+     * Guard, run inside the per-company lock, against a vote that landed between the
+     * identify step and this submit (rule 5). Throws the irrevocable-vote message.
+     */
+    private function assertNotYetVoted(Company $company, int $round): void
+    {
+        if ($company->hasVoted($round)) {
+            throw ValidationException::withMessages([
+                'company_id' => "L’entreprise « {$company->name} » a déjà voté. "
+                    .'Le vote est unique et définitif.',
+            ]);
+        }
     }
 
     /**

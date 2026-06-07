@@ -109,12 +109,22 @@ Server-side enforcement of every rule; Alpine only for UX.
 
 ## Phase 5 — Security, performance, QA
 
-- [ ] HTTPS/SSL-TLS enforced; CSRF on all forms; hash sensitive data.
-- [ ] Redis-backed sessions + locking to guarantee anti-double-vote under concurrency.
-- [ ] Load test for **150+ concurrent users** within the 30-min window.
-- [ ] Feature tests for each critical rule: eligibility, exactly-20 (Mode A), Mode B auto-election,
-      window open/closed, one-vote-per-company, reference-number generation.
-- [ ] Acceptance/test session with EUROCHAM (13 Jun); admin + voter user guides.
+- [~] HTTPS/SSL-TLS enforced; CSRF on all forms; hash sensitive data. CSRF is on every form;
+      passwords hashed (bcrypt); `.env.example` sets HTTPS URL, `SESSION_ENCRYPT`, secure cookies.
+      *Pending:* app-level HTTPS force + security-headers middleware (deferred — not yet built).
+- [x] Redis-backed sessions + **locking to guarantee anti-double-vote under concurrency**.
+      `VoteController@submit` serialises writes per company+round with an atomic `Cache::lock`
+      (Redis in prod; configured store locally) and re-checks not-yet-voted **inside** the lock, so
+      simultaneous requests cannot both pass; brief block-and-retry (3 s) with a French
+      "système occupé, réessayez" message on contention. DB `UNIQUE(company_id, round)` is the
+      ultimate guarantee. Tested: `VoterFlowTest` "serialises submission per company".
+- [ ] Load test for **150+ concurrent users** within the 30-min window. *(Not built — needs
+      k6/Artillery + Redis infra; out of scope this session.)*
+- [x] Feature tests for each critical rule: eligibility, exactly-N (Mode A), Mode B auto-election,
+      window open/closed, one-vote-per-company, reference-number generation, runoff, results gating,
+      concurrency lock — **37 tests passing**.
+- [ ] Acceptance/test session with EUROCHAM (13 Jun); admin + voter user guides. *(External / not
+      yet written.)*
 
 ## Phase 6 — Deployment & AG day
 
