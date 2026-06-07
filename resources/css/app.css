@@ -4,6 +4,52 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Public Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-serif: 'Spectral', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+
+    /* EUROCHAM institutional palette — EU/EUROCHAM blue + EU gold */
+    --color-brand-950: #0b1f3a; /* deepest navy — footers, sidebar */
+    --color-brand-900: #102a52;
+    --color-brand-800: #16386f; /* EUROCHAM wordmark blue */
+    --color-brand-700: #1d478c;
+    --color-brand-600: #2657a6; /* primary actions / links */
+    --color-brand-500: #3a6dc0;
+    --color-brand-100: #d7e3f4;
+    --color-brand-50: #eef3fa; /* tinted surfaces */
+
+    --color-gold-700: #a87913;
+    --color-gold-600: #c8941a;
+    --color-gold-500: #e2a92e; /* EU-gold accent — CTAs, highlights */
+    --color-gold-300: #f0cf7e;
+    --color-gold-100: #f8eccb;
+
+    /* Senegal tricolor — decorative signature only */
+    --color-sng-green: #00853f;
+    --color-sng-gold: #f2c500;
+    --color-sng-red: #e2231a;
+}
+
+/* Staggered page-load reveal (homepage) — CSS-only, restrained */
+@keyframes brand-rise {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.reveal {
+    opacity: 0;
+    animation: brand-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal {
+        animation: none;
+        opacity: 1;
+    }
 }

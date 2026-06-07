@@ -5,22 +5,41 @@
     <style>
         * { font-family: DejaVu Sans, sans-serif; }
         body { color: #1e293b; font-size: 12px; }
-        h1 { font-size: 18px; margin: 0; }
+        h1 { font-size: 18px; margin: 0; color: #16386f; }
         .muted { color: #64748b; font-size: 11px; }
         table { width: 100%; border-collapse: collapse; margin-top: 16px; }
         th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
-        th { background: #f1f5f9; }
+        th { background: #eef3fa; color: #16386f; }
         td.num { text-align: right; }
-        .header { border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 8px; }
+        .header { border-bottom: 3px solid #16386f; padding-bottom: 8px; margin-bottom: 8px; }
+        .header td { border: none; padding: 0; vertical-align: middle; }
+        .tricolor { height: 4px; margin-bottom: 10px; }
+        .tricolor td { padding: 0; border: none; }
     </style>
 </head>
 <body>
+    <table class="tricolor">
+        <tr>
+            <td style="background:#00853f; width:33.33%;">&nbsp;</td>
+            <td style="background:#f2c500; width:33.33%;">&nbsp;</td>
+            <td style="background:#e2231a; width:33.34%;">&nbsp;</td>
+        </tr>
+    </table>
     <div class="header">
-        <h1>Résultats — {{ $election->name }}</h1>
-        <div class="muted">
-            EUROCHAM Sénégal · Réf. P01.EUROCHAM.2026 ·
-            Généré le {{ $generatedAt->format('d/m/Y H:i') }}
-        </div>
+        <table>
+            <tr>
+                <td style="width:120px;">
+                    <img src="{{ public_path('images/logo-eurocham.png') }}" alt="EUROCHAM" style="height:48px;">
+                </td>
+                <td>
+                    <h1>Résultats — {{ $election->name }}</h1>
+                    <div class="muted">
+                        EUROCHAM Sénégal · Réf. P01.EUROCHAM.2026 ·
+                        Généré le {{ $generatedAt->format('d/m/Y H:i') }}
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>
 
     <p class="muted">
@@ -61,7 +80,7 @@
     </table>
 
     @if ($isRunoff && $runoffRanking)
-        <h1 style="font-size:14px; margin-top:20px;">Vote de départage (tour {{ $election->current_round }})</h1>
+        <h1 style="font-size:14px; margin-top:20px; color:#16386f;">Vote de départage (tour {{ $election->current_round }})</h1>
         <table>
             <thead>
                 <tr><th>Rang</th><th>Candidat</th><th>Voix</th></tr>

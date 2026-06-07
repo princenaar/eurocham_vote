@@ -9,7 +9,7 @@
             <div>
                 <label for="file" class="block text-sm font-medium text-slate-700 mb-1">Fichier Excel ou CSV</label>
                 <input id="file" name="file" type="file" accept=".xlsx,.xls,.csv,.txt" required
-                       class="block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:text-white">
+                       class="block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand-800 file:px-3 file:py-2 file:text-sm file:text-white">
             </div>
 
             <div class="rounded-md bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600">
@@ -25,7 +25,7 @@
             </div>
 
             <div class="flex gap-3">
-                <button type="submit" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                <button type="submit" class="rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
                     Importer
                 </button>
                 <a href="{{ route('admin.companies.index') }}" class="px-4 py-2 text-sm text-slate-600">Annuler</a>

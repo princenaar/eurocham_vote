@@ -16,7 +16,7 @@
                     <span class="relative inline-flex h-4 w-4 rounded-full bg-emerald-500"></span>
                 </span>
             </div>
-            <h2 class="text-2xl font-semibold text-slate-900">
+            <h2 class="font-serif text-3xl font-semibold text-brand-800">
                 {{ $isRunoff ? 'Vote de départage en cours' : 'Scrutin en cours' }}
             </h2>
             <p class="mt-3 text-slate-600">
@@ -24,13 +24,13 @@
             </p>
 
             <div class="mt-8 inline-flex flex-col rounded-lg border border-slate-200 bg-white px-8 py-5">
-                <span class="text-4xl font-bold tracking-tight text-emerald-700">{{ $votesCast }}</span>
+                <span class="font-serif text-4xl font-semibold tracking-tight text-brand-700">{{ $votesCast }}</span>
                 <span class="mt-1 text-sm text-slate-500">
                     vote(s) exprimé(s)@if ($eligibleCount > 0) sur {{ $eligibleCount }} entreprise(s) éligible(s)@endif
                 </span>
             </div>
         @else
-            <h2 class="text-2xl font-semibold text-slate-900">Résultats bientôt disponibles</h2>
+            <h2 class="font-serif text-3xl font-semibold text-brand-800">Résultats bientôt disponibles</h2>
             <p class="mt-3 text-slate-600">
                 Les résultats de l’Assemblée Générale seront publiés ici dès la clôture du scrutin.
             </p>

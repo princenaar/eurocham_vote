@@ -9,7 +9,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
             </svg>
         </div>
-        <h2 class="text-2xl font-semibold text-slate-900">Le scrutin n’est pas ouvert</h2>
+        <h2 class="font-serif text-3xl font-semibold text-brand-800">Le scrutin n’est pas ouvert</h2>
         <p class="mt-3 text-slate-600">
             L’espace de vote n’est accessible que pendant la fenêtre officielle du scrutin,
             le 18 juin 2026. Veuillez scanner le QR code affiché en salle le moment venu.

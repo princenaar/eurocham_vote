@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ElectionController;
 use App\Http\Controllers\Admin\ResultController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ResultsController;
 use App\Http\Controllers\VoteController;
 use Illuminate\Support\Facades\Route;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 /*
 | Public
 */
-Route::get('/', fn () => redirect()->route('vote.start'));
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 /*
 | QR-gated voter flow (Phase 3) — every rule enforced server-side in VoteController.

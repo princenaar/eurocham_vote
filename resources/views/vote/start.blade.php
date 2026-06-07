@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="max-w-lg mx-auto py-8">
-        <h2 class="text-2xl font-semibold text-slate-900">Accès au vote</h2>
+        <h2 class="font-serif text-3xl font-semibold text-brand-800">Accès au vote</h2>
         <p class="mt-2 text-slate-600">
             Identifiez votre entreprise membre pour accéder au bulletin. Chaque entreprise
             dispose d’<strong>une seule voix</strong>.
@@ -27,7 +27,7 @@
                         @click.away="open = false"
                         placeholder="Tapez le nom de votre entreprise…"
                         autocomplete="off"
-                        class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                        class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:ring-brand-600"
                         :aria-controls="$id('company-list')"
                     >
                     <ul
@@ -39,7 +39,7 @@
                         <template x-for="company in filtered()" :key="company.id">
                             <li
                                 @click="select(company)"
-                                class="cursor-pointer px-3 py-2 hover:bg-emerald-50"
+                                class="cursor-pointer px-3 py-2 hover:bg-brand-50"
                                 x-text="company.name"
                             ></li>
                         </template>
@@ -58,13 +58,13 @@
                 <div>
                     <label for="last_name" class="block text-sm font-medium text-slate-700">Nom</label>
                     <input id="last_name" name="last_name" type="text" value="{{ old('last_name') }}" required
-                           class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                           class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:ring-brand-600">
                     @error('last_name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label for="first_name" class="block text-sm font-medium text-slate-700">Prénom</label>
                     <input id="first_name" name="first_name" type="text" value="{{ old('first_name') }}" required
-                           class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                           class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:ring-brand-600">
                     @error('first_name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                 </div>
             </div>
@@ -75,12 +75,12 @@
                 </label>
                 <input id="proxy_company_name" name="proxy_company_name" type="text" value="{{ old('proxy_company_name') }}"
                        placeholder="Nom de l’entreprise mandante, le cas échéant"
-                       class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                       class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:ring-brand-600">
                 @error('proxy_company_name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
             </div>
 
             <button type="submit"
-                    class="w-full rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+                    class="w-full rounded-md bg-brand-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2">
                 Accéder au bulletin
             </button>
         </form>

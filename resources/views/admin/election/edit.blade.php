@@ -14,7 +14,7 @@
     <div class="grid gap-6 lg:grid-cols-2">
         {{-- Live controls --}}
         <div class="bg-white rounded-lg border border-slate-200 p-5">
-            <h2 class="text-sm font-semibold text-slate-900">Contrôle en direct</h2>
+            <h2 class="font-serif text-base font-semibold text-brand-800">Contrôle en direct</h2>
             <p class="mt-1 text-xs text-slate-500">
                 Le vote n’est accepté que si la fenêtre est ouverte ET le QR code actif.
             </p>
@@ -46,7 +46,7 @@
                     <form method="POST" action="{{ route('admin.election.qr.toggle') }}">
                         @csrf
                         <button type="submit"
-                                class="rounded-md px-3 py-2 text-sm font-medium {{ $election->qr_active ? 'bg-slate-200 text-slate-800 hover:bg-slate-300' : 'bg-slate-900 text-white hover:bg-slate-800' }}">
+                                class="rounded-md px-3 py-2 text-sm font-medium {{ $election->qr_active ? 'bg-slate-200 text-slate-800 hover:bg-slate-300' : 'bg-brand-800 text-white hover:bg-brand-700' }}">
                             {{ $election->qr_active ? 'Désactiver le QR' : 'Activer le QR' }}
                         </button>
                     </form>
@@ -56,7 +56,7 @@
 
         {{-- QR display --}}
         <div class="bg-white rounded-lg border border-slate-200 p-5 text-center">
-            <h2 class="text-sm font-semibold text-slate-900">QR code de vote</h2>
+            <h2 class="font-serif text-base font-semibold text-brand-800">QR code de vote</h2>
             <div class="mt-3 flex justify-center">
                 <img src="{{ route('admin.election.qr') }}" alt="QR code de vote" class="w-56 h-56">
             </div>
@@ -65,13 +65,13 @@
 
         {{-- Settings --}}
         <div class="bg-white rounded-lg border border-slate-200 p-5 lg:col-span-2">
-            <h2 class="text-sm font-semibold text-slate-900">Paramètres du scrutin</h2>
+            <h2 class="font-serif text-base font-semibold text-brand-800">Paramètres du scrutin</h2>
             <form method="POST" action="{{ route('admin.election.update') }}" class="mt-4 grid gap-4 sm:grid-cols-2">
                 @csrf @method('PUT')
                 <div>
                     <label for="name" class="block text-sm font-medium text-slate-700 mb-1">Nom du scrutin</label>
                     <input id="name" name="name" type="text" value="{{ old('name', $election->name) }}" required
-                           class="w-full rounded-md border-slate-300 shadow-sm text-sm focus:border-slate-500 focus:ring-slate-500">
+                           class="w-full rounded-md border-slate-300 shadow-sm text-sm focus:border-brand-600 focus:ring-brand-600">
                 </div>
                 <div>
                     <label for="candidate_threshold" class="block text-sm font-medium text-slate-700 mb-1">
@@ -79,7 +79,7 @@
                     </label>
                     <input id="candidate_threshold" name="candidate_threshold" type="number" min="1" max="200"
                            value="{{ old('candidate_threshold', $election->candidate_threshold) }}" required
-                           class="w-32 rounded-md border-slate-300 shadow-sm text-sm focus:border-slate-500 focus:ring-slate-500">
+                           class="w-32 rounded-md border-slate-300 shadow-sm text-sm focus:border-brand-600 focus:ring-brand-600">
                 </div>
                 <div class="sm:col-span-2 text-xs text-slate-500">
                     {{ $candidateCount }} candidat(s) enregistré(s) →
@@ -92,7 +92,7 @@
                     @endif
                 </div>
                 <div class="sm:col-span-2">
-                    <button type="submit" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                    <button type="submit" class="rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
                         Enregistrer les paramètres
                     </button>
                 </div>

@@ -13,7 +13,7 @@
             @endif
         </p>
         <a href="{{ route('admin.candidates.create') }}"
-           class="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800">
+           class="rounded-md bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
             + Ajouter un candidat
         </a>
     </div>
@@ -35,7 +35,7 @@
                         <td class="px-4 py-2 font-medium text-slate-900">{{ $candidate->name }}</td>
                         <td class="px-4 py-2">{{ $candidate->auto_elected ? 'Oui' : '—' }}</td>
                         <td class="px-4 py-2 text-right">
-                            <a href="{{ route('admin.candidates.edit', $candidate) }}" class="text-slate-700 underline">Modifier</a>
+                            <a href="{{ route('admin.candidates.edit', $candidate) }}" class="text-brand-700 underline">Modifier</a>
                             <form method="POST" action="{{ route('admin.candidates.destroy', $candidate) }}" class="inline"
                                   onsubmit="return confirm('Supprimer ce candidat ?');">
                                 @csrf @method('DELETE')

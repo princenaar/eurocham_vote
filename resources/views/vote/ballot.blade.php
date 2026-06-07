@@ -6,7 +6,7 @@
     <div class="max-w-2xl mx-auto py-8" x-data="ballot({{ $required }})">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
-                <h2 class="text-2xl font-semibold text-slate-900">Bulletin de vote</h2>
+                <h2 class="font-serif text-3xl font-semibold text-brand-800">Bulletin de vote</h2>
                 <p class="mt-1 text-sm text-slate-600">
                     Entreprise : <span class="font-medium text-slate-800">{{ $company->name }}</span>
                     @if ($proxyCompanyName)
@@ -32,7 +32,7 @@
         <div class="sticky top-0 z-10 mt-4 flex items-center justify-between rounded-md border border-slate-200 bg-white px-4 py-3 shadow-sm">
             <span class="text-sm text-slate-600">Sélectionnés</span>
             <span class="font-mono text-sm font-semibold"
-                  :class="count === required ? 'text-emerald-600' : 'text-slate-900'">
+                  :class="count === required ? 'text-brand-700' : 'text-slate-900'">
                 <span x-text="count"></span> / {{ $required }}
             </span>
         </div>
@@ -44,14 +44,14 @@
                 @foreach ($candidates as $candidate)
                     <li>
                         <label class="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-slate-50"
-                               :class="isChecked({{ $candidate->id }}) ? 'bg-emerald-50' : ''">
+                               :class="isChecked({{ $candidate->id }}) ? 'bg-brand-50' : ''">
                             <input
                                 type="checkbox"
                                 name="candidates[]"
                                 value="{{ $candidate->id }}"
                                 @change="toggle($event)"
                                 :disabled="count >= required && !isChecked({{ $candidate->id }})"
-                                class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-40"
+                                class="h-4 w-4 rounded border-slate-300 text-brand-700 focus:ring-brand-600 disabled:opacity-40"
                             >
                             <span class="text-slate-800">{{ $candidate->name }}</span>
                         </label>
@@ -62,7 +62,7 @@
             <button
                 type="submit"
                 :disabled="count !== required"
-                class="mt-6 w-full rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300"
+                class="mt-6 w-full rounded-md bg-brand-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300"
             >
                 <span x-show="count === required">Vérifier mon vote</span>
                 <span x-show="count !== required" x-cloak>

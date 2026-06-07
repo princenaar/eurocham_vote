@@ -6,7 +6,7 @@
     <div class="flex items-center justify-between mb-4">
         <p class="text-sm text-slate-600">{{ $total }} entreprise(s) dans la liste.</p>
         <a href="{{ route('admin.companies.import') }}"
-           class="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800">
+           class="rounded-md bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
             Importer une liste (Excel/CSV)
         </a>
     </div>

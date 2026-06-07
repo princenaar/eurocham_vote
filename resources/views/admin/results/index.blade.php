@@ -53,13 +53,13 @@
             </thead>
             <tbody class="divide-y divide-slate-100">
                 @forelse ($ranking as $row)
-                    <tr class="{{ in_array($row['candidate']->id, $electedIds, true) ? 'bg-emerald-50/60' : '' }}">
+                    <tr class="{{ in_array($row['candidate']->id, $electedIds, true) ? 'bg-gold-100/50' : '' }}">
                         <td class="px-4 py-2 text-slate-500">{{ $row['rank'] }}</td>
                         <td class="px-4 py-2 font-medium text-slate-900">{{ $row['candidate']->name }}</td>
                         <td class="px-4 py-2 text-right font-semibold">{{ $row['votes'] }}</td>
                         <td class="px-4 py-2">
                             @if (in_array($row['candidate']->id, $electedIds, true))
-                                <span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">Élu</span>
+                                <span class="inline-flex items-center rounded-full bg-gold-100 px-2 py-0.5 text-xs font-medium text-gold-700">Élu</span>
                             @else
                                 <span class="text-slate-400">—</span>
                             @endif
@@ -73,7 +73,7 @@
     </div>
 
     @if ($isRunoff && $runoffRanking)
-        <h3 class="mt-8 mb-3 text-sm font-semibold text-slate-900">
+        <h3 class="mt-8 mb-3 font-serif text-base font-semibold text-brand-800">
             Vote de départage — tour {{ $election->current_round }}
         </h3>
         <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">

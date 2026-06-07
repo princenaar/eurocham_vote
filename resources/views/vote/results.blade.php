@@ -5,7 +5,7 @@
 @section('content')
     <div class="max-w-3xl mx-auto py-8">
         <div class="text-center">
-            <h2 class="text-3xl font-bold tracking-tight text-slate-900">Résultats du scrutin</h2>
+            <h2 class="font-serif text-4xl font-semibold tracking-tight text-brand-800">Résultats du scrutin</h2>
             <p class="mt-2 text-slate-600">
                 {{ $election->name }}
                 @if ($election->mode === \App\Models\Election::MODE_AUTO)
@@ -25,16 +25,21 @@
         @endif
 
         {{-- Elected Board --}}
-        <div class="mt-6 rounded-lg border border-emerald-200 bg-white overflow-hidden">
-            <div class="border-b border-emerald-200 bg-emerald-50 px-5 py-3">
-                <h3 class="text-sm font-semibold text-emerald-800">
-                    Conseil d’Administration 2026 — {{ $electedBoard->count() }} élu(s)
+        <div class="mt-6 rounded-lg border border-brand-100 bg-white overflow-hidden shadow-sm">
+            <div class="flex items-center gap-3 border-b border-brand-900 bg-brand-800 px-5 py-3">
+                <span class="flex h-4 w-1 flex-col overflow-hidden rounded" aria-hidden="true">
+                    <span class="flex-1 bg-sng-green"></span>
+                    <span class="flex-1 bg-sng-gold"></span>
+                    <span class="flex-1 bg-sng-red"></span>
+                </span>
+                <h3 class="font-serif text-base font-semibold text-white">
+                    Conseil d’Administration 2026 — <span class="text-gold-300">{{ $electedBoard->count() }} élu(s)</span>
                 </h3>
             </div>
             <ul class="divide-y divide-slate-100">
                 @forelse ($electedBoard as $candidate)
                     <li class="flex items-center gap-3 px-5 py-3">
-                        <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-xs font-semibold text-emerald-700">
+                        <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-800 text-xs font-semibold text-gold-300">
                             {{ $loop->iteration }}
                         </span>
                         <span class="font-medium text-slate-800">{{ $candidate->name }}</span>
@@ -47,7 +52,7 @@
 
         {{-- Full ranking (Mode A) --}}
         @if ($ranking)
-            <h3 class="mt-8 mb-3 text-sm font-semibold text-slate-900">Détail des voix</h3>
+            <h3 class="mt-8 mb-3 font-serif text-lg font-semibold text-brand-800">Détail des voix</h3>
             <div class="rounded-lg border border-slate-200 bg-white overflow-hidden">
                 <table class="w-full text-sm">
                     <thead class="bg-slate-50 text-left text-slate-500">
@@ -60,13 +65,13 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @foreach ($ranking as $row)
-                            <tr class="{{ in_array($row['candidate']->id, $electedIds, true) ? 'bg-emerald-50/60' : '' }}">
+                            <tr class="{{ in_array($row['candidate']->id, $electedIds, true) ? 'bg-gold-100/50' : '' }}">
                                 <td class="px-4 py-2 text-slate-500">{{ $row['rank'] }}</td>
                                 <td class="px-4 py-2 font-medium text-slate-900">{{ $row['candidate']->name }}</td>
                                 <td class="px-4 py-2 text-right font-semibold">{{ $row['votes'] }}</td>
                                 <td class="px-4 py-2">
                                     @if (in_array($row['candidate']->id, $electedIds, true))
-                                        <span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">Élu</span>
+                                        <span class="inline-flex items-center rounded-full bg-gold-100 px-2 py-0.5 text-xs font-medium text-gold-700">Élu</span>
                                     @else
                                         <span class="text-slate-400">—</span>
                                     @endif
@@ -79,7 +84,7 @@
         @endif
 
         @if ($isRunoff && $runoffRanking)
-            <h3 class="mt-8 mb-3 text-sm font-semibold text-slate-900">
+            <h3 class="mt-8 mb-3 font-serif text-lg font-semibold text-brand-800">
                 Vote de départage — tour {{ $election->current_round }}
             </h3>
             <div class="rounded-lg border border-slate-200 bg-white overflow-hidden">
