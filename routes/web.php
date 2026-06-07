@@ -6,6 +6,8 @@ use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ElectionController;
 use App\Http\Controllers\Admin\ResultController;
+use App\Http\Controllers\ResultsController;
+use App\Http\Controllers\VoteController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,8 +15,20 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', fn () => redirect()->route('vote.start'));
 
-// Placeholder for the QR-gated voter flow (built in Phase 3).
-Route::get('/vote', fn () => view('vote.placeholder'))->name('vote.start');
+/*
+| QR-gated voter flow (Phase 3) — every rule enforced server-side in VoteController.
+*/
+Route::controller(VoteController::class)->group(function () {
+    Route::get('/vote', 'start')->name('vote.start');
+    Route::post('/vote', 'identify')->name('vote.identify');
+    Route::get('/vote/bulletin', 'ballot')->name('vote.ballot');
+    Route::post('/vote/verification', 'review')->name('vote.review');
+    Route::post('/vote/confirmer', 'submit')->name('vote.submit');
+    Route::get('/vote/confirmation', 'confirmation')->name('vote.confirmation');
+});
+
+// Public, read-only results / in-room proclamation (revealed automatically at close).
+Route::get('/resultats', [ResultsController::class, 'index'])->name('results.public');
 
 /*
 | Admin back-office (Phase 2)
@@ -39,6 +53,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('election', [ElectionController::class, 'update'])->name('election.update');
         Route::post('election/window', [ElectionController::class, 'toggleWindow'])->name('election.window');
         Route::post('election/qr', [ElectionController::class, 'toggleQr'])->name('election.qr.toggle');
+        Route::post('election/runoff', [ElectionController::class, 'launchRunoff'])->name('election.runoff');
         Route::get('election/qr.svg', [ElectionController::class, 'qr'])->name('election.qr');
 
         Route::get('results', [ResultController::class, 'index'])->name('results.index');

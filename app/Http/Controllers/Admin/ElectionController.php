@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Candidate;
 use App\Models\Election;
 use App\Support\AuditLogger;
+use App\Support\ElectionResults;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -70,6 +71,49 @@ class ElectionController extends Controller
 
         return redirect()->route('admin.election.edit')
             ->with('status', $election->qr_active ? 'QR code activé.' : 'QR code désactivé.');
+    }
+
+    /**
+     * Launch a tiebreaker runoff (vote de départage) for a boundary tie. Re-opens a
+     * restricted scrutin among only the tied candidates for the remaining seats, as a
+     * new round so each company may vote once more (rule 1). Only meaningful once the
+     * current round is closed and an ambiguous tie exists.
+     */
+    public function launchRunoff(): RedirectResponse
+    {
+        $election = Election::current();
+
+        if ($election->window_open) {
+            return redirect()->route('admin.results.index')
+                ->withErrors(['runoff' => 'Clôturez d’abord le vote en cours avant de lancer un départage.']);
+        }
+
+        $tie = ElectionResults::for($election)->pendingTie();
+
+        if ($tie === null) {
+            return redirect()->route('admin.results.index')
+                ->withErrors(['runoff' => 'Aucune égalité à départager.']);
+        }
+
+        $tiedIds = $tie['tied']->pluck('id')->all();
+
+        $election->update([
+            'current_round' => $election->current_round + 1,
+            'runoff_candidate_ids' => $tiedIds,
+            'runoff_seats' => $tie['seats'],
+            'window_open' => true,
+            'qr_active' => true,
+            'opened_at' => now(),
+        ]);
+
+        AuditLogger::log('election.runoff_launched', 'Vote de départage lancé', [
+            'round' => $election->current_round,
+            'seats' => $tie['seats'],
+            'candidate_ids' => $tiedIds,
+        ]);
+
+        return redirect()->route('admin.election.edit')
+            ->with('status', "Vote de départage lancé (tour {$election->current_round}).");
     }
 
     /**

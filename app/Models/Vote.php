@@ -18,6 +18,7 @@ class Vote extends Model
 
     protected $fillable = [
         'company_id',
+        'round',
         'proxy_company_name',
         'reference_number',
         'voted_at',
@@ -26,6 +27,7 @@ class Vote extends Model
     protected function casts(): array
     {
         return [
+            'round' => 'integer',
             'voted_at' => 'datetime',
         ];
     }

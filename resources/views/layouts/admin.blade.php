@@ -33,6 +33,10 @@
                     {{ $label }}
                 </a>
             @endforeach
+            <a href="{{ route('results.public') }}" target="_blank" rel="noopener"
+               class="mt-2 block rounded-md px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">
+                Affichage public ↗
+            </a>
             <form method="POST" action="{{ route('admin.logout') }}" class="mt-4 border-t border-slate-700 pt-3">
                 @csrf
                 <button type="submit" class="block w-full text-left rounded-md px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">

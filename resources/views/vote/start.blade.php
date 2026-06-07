@@ -1,0 +1,119 @@
+@extends('layouts.app')
+
+@section('title', 'Accès au vote — EUROCHAM AG 2026')
+
+@section('content')
+    <div class="max-w-lg mx-auto py-8">
+        <h2 class="text-2xl font-semibold text-slate-900">Accès au vote</h2>
+        <p class="mt-2 text-slate-600">
+            Identifiez votre entreprise membre pour accéder au bulletin. Chaque entreprise
+            dispose d’<strong>une seule voix</strong>.
+        </p>
+
+        <form method="POST" action="{{ route('vote.identify') }}" class="mt-6 space-y-5"
+              x-data="companyPicker(@js(old('company_id')))">
+            @csrf
+
+            {{-- Searchable company combobox. The server re-validates by id regardless of UI state. --}}
+            <div x-id="['company-list']">
+                <label class="block text-sm font-medium text-slate-700">Entreprise membre</label>
+                <div class="relative mt-1">
+                    <input type="hidden" name="company_id" x-model="selectedId">
+                    <input
+                        type="text"
+                        x-model="query"
+                        @focus="open = true"
+                        @input="open = true; selectedId = ''"
+                        @click.away="open = false"
+                        placeholder="Tapez le nom de votre entreprise…"
+                        autocomplete="off"
+                        class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                        :aria-controls="$id('company-list')"
+                    >
+                    <ul
+                        x-show="open && filtered().length"
+                        x-cloak
+                        :id="$id('company-list')"
+                        class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border border-slate-200 bg-white py-1 text-sm shadow-lg"
+                    >
+                        <template x-for="company in filtered()" :key="company.id">
+                            <li
+                                @click="select(company)"
+                                class="cursor-pointer px-3 py-2 hover:bg-emerald-50"
+                                x-text="company.name"
+                            ></li>
+                        </template>
+                    </ul>
+                    <p x-show="open && query.length && !filtered().length" x-cloak
+                       class="absolute z-10 mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 shadow-lg">
+                        Aucune entreprise correspondante. Contactez le secrétariat.
+                    </p>
+                </div>
+                @error('company_id')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="last_name" class="block text-sm font-medium text-slate-700">Nom</label>
+                    <input id="last_name" name="last_name" type="text" value="{{ old('last_name') }}" required
+                           class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                    @error('last_name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label for="first_name" class="block text-sm font-medium text-slate-700">Prénom</label>
+                    <input id="first_name" name="first_name" type="text" value="{{ old('first_name') }}" required
+                           class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                    @error('first_name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+            </div>
+
+            <div>
+                <label for="proxy_company_name" class="block text-sm font-medium text-slate-700">
+                    Entreprise représentée par procuration <span class="font-normal text-slate-400">(facultatif)</span>
+                </label>
+                <input id="proxy_company_name" name="proxy_company_name" type="text" value="{{ old('proxy_company_name') }}"
+                       placeholder="Nom de l’entreprise mandante, le cas échéant"
+                       class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                @error('proxy_company_name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+            </div>
+
+            <button type="submit"
+                    class="w-full rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+                Accéder au bulletin
+            </button>
+        </form>
+
+        <p class="mt-6 text-center text-sm text-slate-400">
+            Entreprise introuvable ou non à jour ? Contactez le secrétariat EUROCHAM.
+        </p>
+    </div>
+
+    <script>
+        function companyPicker(oldId) {
+            return {
+                companies: @js($companies->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->values()),
+                query: '',
+                selectedId: oldId || '',
+                open: false,
+                init() {
+                    if (this.selectedId) {
+                        const match = this.companies.find(c => String(c.id) === String(this.selectedId));
+                        if (match) this.query = match.name;
+                    }
+                },
+                filtered() {
+                    const q = this.query.trim().toLowerCase();
+                    if (!q) return this.companies;
+                    return this.companies.filter(c => c.name.toLowerCase().includes(q));
+                },
+                select(company) {
+                    this.selectedId = company.id;
+                    this.query = company.name;
+                    this.open = false;
+                },
+            };
+        }
+    </script>
+@endsection

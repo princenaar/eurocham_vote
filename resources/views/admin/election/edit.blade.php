@@ -3,6 +3,14 @@
 @section('title', 'Scrutin & QR code')
 
 @section('content')
+    @if ($election->isRunoff())
+        <div class="mb-6 rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+            <strong>Vote de départage en cours — tour {{ $election->current_round }}.</strong>
+            Seuls les {{ count($election->runoff_candidate_ids) }} candidats à égalité sont au bulletin,
+            pour {{ $election->runoff_seats }} siège(s).
+        </div>
+    @endif
+
     <div class="grid gap-6 lg:grid-cols-2">
         {{-- Live controls --}}
         <div class="bg-white rounded-lg border border-slate-200 p-5">

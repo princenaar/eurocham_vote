@@ -69,19 +69,43 @@ Design the schema; enforce constraints in DB where possible.
 
 Server-side enforcement of every rule; Alpine only for UX.
 
-- [ ] QR landing → eligibility form (name, first name, member company, optional proxy company).
-- [ ] Eligibility check against imported list; explicit "contact secretariat" message on failure.
-- [ ] Reject if voting window closed or company already voted.
-- [ ] **Mode A** ballot: full candidate list, live counter, submit enabled only at exactly 20.
-- [ ] **Mode B**: skip ballot, show auto-election result.
-- [ ] Review screen → final submit → unique timestamped reference number (final & irrevocable).
-- [ ] Block + warn on any second attempt by the same company.
+- [x] QR landing → eligibility form (name, first name, **searchable** member-company dropdown,
+      optional proxy company). `VoteController@start` routes by scrutin state (closed/Mode A/Mode B).
+- [x] Eligibility check against imported list (server re-validates by company id); explicit
+      "contact secretariat" message on unknown/ineligible company.
+- [x] Reject if voting window closed or company already voted (re-checked at every step + submit).
+- [x] **Mode A** ballot: full candidate list, live Alpine counter, submit enabled only at exactly N;
+      server re-enforces `count === requiredSelections()` at submit regardless of browser state.
+- [x] **Mode B**: skip ballot, show auto-election result (`vote.auto`); `/vote/bulletin` redirects back.
+- [x] Review screen → final submit → unique timestamped reference number `EC2026-ymd-His-XXXX`
+      (final & irrevocable), written with selections in a DB transaction; `vote.cast` audit logged
+      (representative name → audit only, per rule 7).
+- [x] Block + warn on any second attempt: pre-check at identify + DB `UNIQUE(company_id)` caught at
+      submit (`UniqueConstraintViolationException`) for the concurrency race. Redis atomic lock
+      deferred to Phase 5.
+- Tests: `VoterFlowTest` (11 passing) — window closed, eligibility, exactly-N (under/over/exact),
+  double-vote, Mode B short-circuit, mid-session close, review + confirmation render.
 
 ## Phase 4 — Results & proclamation
 
-- [ ] Auto-consolidate results at window close; in-room display view.
-- [ ] Read-only public results mode after AG.
-- [ ] Excel + PDF official report generation.
+- [x] Auto-consolidate results at window close; in-room display view. Public `/resultats`
+      (`ResultsController`) reveals results **only after the window is closed** (`closed_at` set &
+      `!window_open`); while open it shows turnout only — never choices (rule 7). `<meta refresh>`
+      poll flips the projected display to results automatically at close.
+- [x] Read-only public results mode after AG — `/resultats` is public, read-only, shows the elected
+      Board + full ranking; admin sidebar links to it ("Affichage public").
+- [x] Excel + PDF official report generation — built in Phase 2; **refactored** onto the shared
+      `Support\ElectionResults` so ranking + "Élu" flag + runoff section match the screens exactly.
+- [x] **Tiebreaker runoff (vote de départage):** `ElectionResults` detects a boundary tie at the last
+      seat(s) (top-N + flag, rule 8). Admin launches `ElectionController@launchRunoff` (window must be
+      closed) → re-opens a **restricted** scrutin (new `round`) among only the tied candidates for the
+      remaining seats; voter flow enforces the restricted ballot + per-round one-vote
+      (`votes UNIQUE(company_id, round)`). Final Board = round-1 clear winners + runoff winners.
+- Data model additions: `votes.round`, `elections.{current_round, runoff_candidate_ids, runoff_seats}`
+  (migration `2026_06_07_000001`, applied on MySQL).
+- Tests: `ElectionResultsTest` (5) + `RunoffAndResultsTest` (9) — ranking, elected board, tie
+  detection, runoff resolution, runoff launch guards, restricted ballot, round-aware re-vote, public
+  gating (open/closed/Mode B), admin render + exports. Full suite **36 passing**.
 
 ## Phase 5 — Security, performance, QA
 

@@ -19,6 +19,9 @@ class Election extends Model
         'name',
         'mode',
         'candidate_threshold',
+        'current_round',
+        'runoff_candidate_ids',
+        'runoff_seats',
         'window_open',
         'qr_active',
         'opened_at',
@@ -29,6 +32,9 @@ class Election extends Model
     {
         return [
             'candidate_threshold' => 'integer',
+            'current_round' => 'integer',
+            'runoff_candidate_ids' => 'array',
+            'runoff_seats' => 'integer',
             'window_open' => 'boolean',
             'qr_active' => 'boolean',
             'opened_at' => 'datetime',
@@ -77,11 +83,37 @@ class Election extends Model
     }
 
     /**
-     * Number of seats a Mode A voter must fill — exactly the threshold (rule 4).
+     * Number of seats a Mode A voter must fill. In the main vote that is the threshold;
+     * in a runoff (round 2+) it is the number of contested seats (rule 4 + tiebreaker).
      */
     public function requiredSelections(): int
     {
-        return $this->candidate_threshold;
+        return $this->isRunoff() ? (int) $this->runoff_seats : $this->candidate_threshold;
+    }
+
+    /**
+     * True once a tiebreaker round has been launched (round 2+ with a restricted ballot).
+     */
+    public function isRunoff(): bool
+    {
+        return $this->current_round > 1 && ! empty($this->runoff_candidate_ids);
+    }
+
+    /**
+     * Candidates appearing on the current ballot: all candidates in the main vote,
+     * only the tied candidates during a runoff.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, Candidate>
+     */
+    public function ballotCandidates()
+    {
+        $query = Candidate::query()->orderBy('display_order')->orderBy('name');
+
+        if ($this->isRunoff()) {
+            $query->whereIn('id', $this->runoff_candidate_ids);
+        }
+
+        return $query->get();
     }
 
     /**

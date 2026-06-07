@@ -32,25 +32,50 @@
         @endif
     </p>
 
+    @if ($hasUnresolvedTie && $pendingTie)
+        <p class="muted" style="color:#b45309;">
+            Égalité pour {{ $pendingTie['seats'] }} siège(s) entre :
+            {{ $pendingTie['tied']->pluck('name')->implode(', ') }} — départage requis.
+        </p>
+    @endif
+
     <table>
         <thead>
             <tr>
                 <th>Rang</th>
                 <th>Candidat</th>
                 <th>Voix</th>
-                <th>Élu automatiquement</th>
+                <th>Élu</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($results as $i => $candidate)
+            @foreach ($ranking as $row)
                 <tr>
-                    <td>{{ $i + 1 }}</td>
-                    <td>{{ $candidate->name }}</td>
-                    <td class="num">{{ $candidate->selections_count }}</td>
-                    <td>{{ $candidate->auto_elected ? 'Oui' : 'Non' }}</td>
+                    <td>{{ $row['rank'] }}</td>
+                    <td>{{ $row['candidate']->name }}</td>
+                    <td class="num">{{ $row['votes'] }}</td>
+                    <td>{{ in_array($row['candidate']->id, $electedIds, true) ? 'Oui' : 'Non' }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
+
+    @if ($isRunoff && $runoffRanking)
+        <h1 style="font-size:14px; margin-top:20px;">Vote de départage (tour {{ $election->current_round }})</h1>
+        <table>
+            <thead>
+                <tr><th>Rang</th><th>Candidat</th><th>Voix</th></tr>
+            </thead>
+            <tbody>
+                @foreach ($runoffRanking as $row)
+                    <tr>
+                        <td>{{ $row['rank'] }}</td>
+                        <td>{{ $row['candidate']->name }}</td>
+                        <td class="num">{{ $row['votes'] }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
 </body>
 </html>

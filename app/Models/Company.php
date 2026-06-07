@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 /**
@@ -48,13 +48,19 @@ class Company extends Model
         return Str::lower(Str::squish($name));
     }
 
-    public function vote(): HasOne
+    public function votes(): HasMany
     {
-        return $this->hasOne(Vote::class);
+        return $this->hasMany(Vote::class);
     }
 
-    public function hasVoted(): bool
+    /**
+     * Whether this company has already voted in the given round (one vote each per
+     * round — rule 1). Defaults to the election's current round.
+     */
+    public function hasVoted(?int $round = null): bool
     {
-        return $this->vote()->exists();
+        $round ??= Election::current()->current_round;
+
+        return $this->votes()->where('round', $round)->exists();
     }
 }
