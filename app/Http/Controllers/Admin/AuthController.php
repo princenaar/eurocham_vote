@@ -7,6 +7,8 @@ use App\Support\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -32,7 +34,21 @@ class AuthController extends Controller
             'password.required' => 'Le mot de passe est obligatoire.',
         ]);
 
+        $throttleKey = $this->throttleKey($request);
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            AuditLogger::log('login.locked', 'Connexion admin temporairement bloquée', [
+                'email' => $credentials['email'],
+                'seconds' => RateLimiter::availableIn($throttleKey),
+            ]);
+
+            throw ValidationException::withMessages([
+                'email' => 'Trop de tentatives. Réessayez dans quelques instants.',
+            ]);
+        }
+
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+            RateLimiter::hit($throttleKey, 60);
             AuditLogger::log('login.failed', 'Échec de connexion', ['email' => $credentials['email']]);
 
             throw ValidationException::withMessages([
@@ -40,6 +56,7 @@ class AuthController extends Controller
             ]);
         }
 
+        RateLimiter::clear($throttleKey);
         $request->session()->regenerate();
         AuditLogger::log('login.success', 'Connexion réussie');
 
@@ -55,5 +72,10 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('admin.login');
+    }
+
+    private function throttleKey(Request $request): string
+    {
+        return Str::lower((string) $request->input('email')).'|'.$request->ip();
     }
 }

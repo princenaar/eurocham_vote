@@ -22,6 +22,7 @@ class ResultController extends Controller
 
     public function exportExcel(): BinaryFileResponse
     {
+        $this->ensureFinalExportAllowed();
         AuditLogger::log('results.export', 'Export Excel des résultats');
 
         return Excel::download(new ResultsExport(), 'resultats_eurocham_2026.xlsx');
@@ -29,6 +30,7 @@ class ResultController extends Controller
 
     public function exportPdf(): Response
     {
+        $this->ensureFinalExportAllowed();
         AuditLogger::log('results.export', 'Export PDF des résultats');
 
         $pdf = Pdf::loadView('admin.results.pdf', $this->data());
@@ -59,6 +61,12 @@ class ResultController extends Controller
             'runoffRanking' => $election->isRunoff() ? $results->ranking($election->current_round) : null,
             'votesCast' => $results->votesCast(1),
             'generatedAt' => now(),
+            'canExportFinalResults' => $election->canExportFinalResults(),
         ];
+    }
+
+    private function ensureFinalExportAllowed(): void
+    {
+        abort_unless(Election::current()->canExportFinalResults(), 403, 'Les exports définitifs sont disponibles uniquement après clôture du scrutin.');
     }
 }

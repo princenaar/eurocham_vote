@@ -71,11 +71,14 @@
 
             <div>
                 <label for="proxy_company_name" class="block text-sm font-medium text-slate-700">
-                    Entreprise représentée par procuration <span class="font-normal text-slate-400">(facultatif)</span>
+                    Information de procuration <span class="font-normal text-slate-400">(facultatif)</span>
                 </label>
                 <input id="proxy_company_name" name="proxy_company_name" type="text" value="{{ old('proxy_company_name') }}"
                        placeholder="Nom de l’entreprise mandante, le cas échéant"
                        class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:ring-brand-600">
+                <p class="mt-1 text-xs text-slate-500">
+                    Cette information est enregistrée pour la traçabilité ; elle ne crée pas de bulletin additionnel.
+                </p>
                 @error('proxy_company_name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
             </div>
 

@@ -26,6 +26,13 @@ class ElectionController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
+        $election = Election::current();
+
+        if (! $election->canEditConfiguration()) {
+            return redirect()->route('admin.election.edit')
+                ->withErrors(['election' => 'Les paramètres du scrutin sont verrouillés dès l’ouverture du vote.']);
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'candidate_threshold' => ['required', 'integer', 'min:1', 'max:200'],
@@ -34,7 +41,6 @@ class ElectionController extends Controller
             'candidate_threshold.required' => 'Le nombre de sièges est obligatoire.',
         ]);
 
-        $election = Election::current();
         $election->update($data);
         // Threshold change can flip Mode A/B (rule 4).
         $election->syncModeFromCandidates();
@@ -48,8 +54,19 @@ class ElectionController extends Controller
         $election = Election::current();
         $open = ! $election->window_open;
 
+        if ($open && ! $election->canOpenMainVote()) {
+            return redirect()->route('admin.election.edit')
+                ->withErrors(['window' => 'Impossible d’ouvrir le vote : vérifiez le QR code, les candidats, le mode et la liste des entreprises éligibles.']);
+        }
+
         $election->window_open = $open;
-        $open ? $election->opened_at = now() : $election->closed_at = now();
+        if ($open) {
+            $election->status = Election::STATUS_OPEN;
+            $election->opened_at = now();
+        } else {
+            $election->status = Election::STATUS_CLOSED;
+            $election->closed_at = now();
+        }
         $election->save();
 
         AuditLogger::log(
@@ -83,7 +100,7 @@ class ElectionController extends Controller
     {
         $election = Election::current();
 
-        if ($election->window_open) {
+        if (! $election->canLaunchRunoff()) {
             return redirect()->route('admin.results.index')
                 ->withErrors(['runoff' => 'Clôturez d’abord le vote en cours avant de lancer un départage.']);
         }
@@ -101,6 +118,7 @@ class ElectionController extends Controller
             'current_round' => $election->current_round + 1,
             'runoff_candidate_ids' => $tiedIds,
             'runoff_seats' => $tie['seats'],
+            'status' => Election::STATUS_RUNOFF_OPEN,
             'window_open' => true,
             'qr_active' => true,
             'opened_at' => now(),

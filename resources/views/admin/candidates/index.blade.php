@@ -12,10 +12,16 @@
                 <span class="text-slate-700">Mode A : les votants sélectionnent {{ $election->candidate_threshold }} candidats.</span>
             @endif
         </p>
-        <a href="{{ route('admin.candidates.create') }}"
-           class="rounded-md bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
-            + Ajouter un candidat
-        </a>
+        @if ($election->canEditConfiguration())
+            <a href="{{ route('admin.candidates.create') }}"
+               class="rounded-md bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
+                + Ajouter un candidat
+            </a>
+        @else
+            <span class="rounded-md bg-slate-100 px-3 py-2 text-sm font-medium text-slate-500">
+                Liste verrouillée
+            </span>
+        @endif
     </div>
 
     <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
@@ -35,12 +41,16 @@
                         <td class="px-4 py-2 font-medium text-slate-900">{{ $candidate->name }}</td>
                         <td class="px-4 py-2">{{ $candidate->auto_elected ? 'Oui' : '—' }}</td>
                         <td class="px-4 py-2 text-right">
-                            <a href="{{ route('admin.candidates.edit', $candidate) }}" class="text-brand-700 underline">Modifier</a>
-                            <form method="POST" action="{{ route('admin.candidates.destroy', $candidate) }}" class="inline"
-                                  onsubmit="return confirm('Supprimer ce candidat ?');">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="ml-3 text-red-600 underline">Supprimer</button>
-                            </form>
+                            @if ($election->canEditConfiguration())
+                                <a href="{{ route('admin.candidates.edit', $candidate) }}" class="text-brand-700 underline">Modifier</a>
+                                <form method="POST" action="{{ route('admin.candidates.destroy', $candidate) }}" class="inline"
+                                      onsubmit="return confirm('Supprimer ce candidat ?');">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="ml-3 text-red-600 underline">Supprimer</button>
+                                </form>
+                            @else
+                                <span class="text-slate-400">Lecture seule</span>
+                            @endif
                         </td>
                     </tr>
                 @empty

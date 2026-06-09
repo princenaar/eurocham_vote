@@ -24,11 +24,17 @@ class CandidateController extends Controller
 
     public function create(): View
     {
+        abort_unless(Election::current()->canEditConfiguration(), 403);
+
         return view('admin.candidates.create');
     }
 
     public function store(Request $request): RedirectResponse
     {
+        if (! Election::current()->canEditConfiguration()) {
+            return $this->configurationLockedRedirect();
+        }
+
         $data = $this->validateCandidate($request);
 
         $candidate = Candidate::create($data);
@@ -41,11 +47,17 @@ class CandidateController extends Controller
 
     public function edit(Candidate $candidate): View
     {
+        abort_unless(Election::current()->canEditConfiguration(), 403);
+
         return view('admin.candidates.edit', ['candidate' => $candidate]);
     }
 
     public function update(Request $request, Candidate $candidate): RedirectResponse
     {
+        if (! Election::current()->canEditConfiguration()) {
+            return $this->configurationLockedRedirect();
+        }
+
         $candidate->update($this->validateCandidate($request));
         AuditLogger::log('candidate.updated', "Candidat modifié : {$candidate->name}", ['id' => $candidate->id]);
 
@@ -55,6 +67,10 @@ class CandidateController extends Controller
 
     public function destroy(Candidate $candidate): RedirectResponse
     {
+        if (! Election::current()->canEditConfiguration()) {
+            return $this->configurationLockedRedirect();
+        }
+
         $name = $candidate->name;
         $candidate->delete();
         Election::current()->syncModeFromCandidates();
@@ -76,5 +92,11 @@ class CandidateController extends Controller
             'name.required' => 'Le nom du candidat est obligatoire.',
             'display_order.integer' => 'L’ordre d’affichage doit être un nombre.',
         ]);
+    }
+
+    private function configurationLockedRedirect(): RedirectResponse
+    {
+        return redirect()->route('admin.candidates.index')
+            ->withErrors(['candidates' => 'La liste des candidats est verrouillée dès l’ouverture du scrutin.']);
     }
 }

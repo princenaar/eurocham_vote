@@ -22,10 +22,10 @@ class ResultsController extends Controller
 
         // Reveal only after a real close. While the window is open (incl. a live runoff)
         // or the scrutin has never been closed, show turnout only — never choices (rule 7).
-        if ($election->window_open || $election->closed_at === null) {
+        if ($election->window_open || ! $election->canExportFinalResults()) {
             return view('vote.results-pending', [
                 'election' => $election,
-                'votesCast' => Vote::query()->where('round', $election->current_round)->count(),
+                'votesCast' => Vote::round($election->current_round)->count(),
                 'eligibleCount' => $this->eligibleCount(),
                 'isRunoff' => $election->isRunoff(),
             ]);
@@ -49,9 +49,7 @@ class ResultsController extends Controller
     private function eligibleCount(): int
     {
         return Company::query()
-            ->where(fn ($q) => $q->where('survey_2025', true)
-                ->orWhere('dues_2025', true)
-                ->orWhere('new_member_2026', true))
+            ->eligible()
             ->count();
     }
 }

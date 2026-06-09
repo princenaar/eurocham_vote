@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,12 +15,24 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
-        // Admin back-office account. Override the dev password via ADMIN_PASSWORD in .env.
+        $adminEmail = env('ADMIN_EMAIL');
+        $adminPassword = env('ADMIN_PASSWORD');
+
+        if (! app()->environment('local', 'testing')) {
+            if (! $adminEmail || ! $adminPassword) {
+                throw new RuntimeException('ADMIN_EMAIL et ADMIN_PASSWORD sont obligatoires hors environnement local.');
+            }
+        }
+
+        $adminEmail ??= 'admin@eurocham.sn';
+        $adminPassword ??= 'eurocham2026';
+
+        // Admin back-office account. Production must provide ADMIN_PASSWORD in .env.
         User::query()->updateOrCreate(
-            ['email' => env('ADMIN_EMAIL', 'admin@eurocham.sn')],
+            ['email' => $adminEmail],
             [
                 'name' => 'Administrateur EUROCHAM',
-                'password' => Hash::make(env('ADMIN_PASSWORD', 'eurocham2026')),
+                'password' => Hash::make($adminPassword),
             ],
         );
 

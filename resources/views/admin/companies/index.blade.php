@@ -5,10 +5,16 @@
 @section('content')
     <div class="flex items-center justify-between mb-4">
         <p class="text-sm text-slate-600">{{ $total }} entreprise(s) dans la liste.</p>
-        <a href="{{ route('admin.companies.import') }}"
-           class="rounded-md bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
-            Importer une liste (Excel/CSV)
-        </a>
+        @if (\App\Models\Election::current()->canEditConfiguration())
+            <a href="{{ route('admin.companies.import') }}"
+               class="rounded-md bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
+                Importer une liste (Excel/CSV)
+            </a>
+        @else
+            <span class="rounded-md bg-slate-100 px-3 py-2 text-sm font-medium text-slate-500">
+                Liste verrouillée
+            </span>
+        @endif
     </div>
 
     <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">

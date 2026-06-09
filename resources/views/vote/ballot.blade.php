@@ -10,7 +10,7 @@
                 <p class="mt-1 text-sm text-slate-600">
                     Entreprise : <span class="font-medium text-slate-800">{{ $company->name }}</span>
                     @if ($proxyCompanyName)
-                        · Procuration : <span class="font-medium text-slate-800">{{ $proxyCompanyName }}</span>
+                        · Information de procuration : <span class="font-medium text-slate-800">{{ $proxyCompanyName }}</span>
                     @endif
                 </p>
             </div>
@@ -26,6 +26,9 @@
         <div class="mt-3 rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
             Sélectionnez <strong>exactement {{ $required }}</strong> candidat(s). Le bouton de
             validation s’active uniquement lorsque {{ $required }} candidats sont cochés.
+            @if ($proxyCompanyName)
+                <br>La procuration indiquée est conservée pour audit et ne crée pas de second bulletin.
+            @endif
         </div>
 
         {{-- Sticky live counter (UX only — the server re-checks the exact count). --}}

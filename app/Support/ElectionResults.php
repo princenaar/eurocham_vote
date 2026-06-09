@@ -63,7 +63,7 @@ class ElectionResults
 
     public function votesCast(int $round = 1): int
     {
-        return Vote::query()->where('round', $round)->count();
+        return Vote::round($round)->count();
     }
 
     /**

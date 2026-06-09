@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -60,5 +61,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('results', [ResultController::class, 'index'])->name('results.index');
         Route::get('results/export/excel', [ResultController::class, 'exportExcel'])->name('results.excel');
         Route::get('results/export/pdf', [ResultController::class, 'exportPdf'])->name('results.pdf');
+
+        Route::get('audit', [AuditLogController::class, 'index'])->name('audit.index');
     });
 });

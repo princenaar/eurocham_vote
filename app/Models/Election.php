@@ -15,8 +15,17 @@ class Election extends Model
     public const MODE_SELECT = 'A';   // > threshold candidates: voter picks exactly <threshold>.
     public const MODE_AUTO = 'B';     // <= threshold candidates: all auto-elected, no ballot.
 
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_READY = 'ready';
+    public const STATUS_OPEN = 'open';
+    public const STATUS_CLOSED = 'closed';
+    public const STATUS_RUNOFF_OPEN = 'runoff_open';
+    public const STATUS_FINALIZED = 'finalized';
+
     protected $fillable = [
+        'singleton_key',
         'name',
+        'status',
         'mode',
         'candidate_threshold',
         'current_round',
@@ -47,7 +56,10 @@ class Election extends Model
      */
     public static function current(): self
     {
-        return static::query()->firstOrCreate([]);
+        return static::query()->firstOrCreate(
+            ['singleton_key' => 'current'],
+            ['status' => self::STATUS_DRAFT, 'current_round' => 1],
+        );
     }
 
     /**
@@ -77,6 +89,9 @@ class Election extends Model
         $mode = $this->resolveMode($count);
 
         $this->mode = $mode;
+        if ($this->status === self::STATUS_DRAFT && $mode !== null) {
+            $this->status = self::STATUS_READY;
+        }
         $this->save();
 
         Candidate::query()->update(['auto_elected' => $mode === self::MODE_AUTO]);
@@ -96,7 +111,7 @@ class Election extends Model
      */
     public function isRunoff(): bool
     {
-        return $this->current_round > 1 && ! empty($this->runoff_candidate_ids);
+        return (int) $this->current_round > 1 && ! empty($this->runoff_candidate_ids);
     }
 
     /**
@@ -121,6 +136,59 @@ class Election extends Model
      */
     public function isVotingOpen(): bool
     {
-        return $this->window_open && $this->qr_active;
+        return $this->window_open
+            && $this->qr_active
+            && in_array($this->status, [self::STATUS_OPEN, self::STATUS_RUNOFF_OPEN], true);
+    }
+
+    public function canEditConfiguration(): bool
+    {
+        return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_READY], true)
+            && ! $this->window_open;
+    }
+
+    public function canOpenMainVote(): bool
+    {
+        return $this->status === self::STATUS_READY
+            && $this->mode !== null
+            && (int) ($this->current_round ?? 1) === 1
+            && $this->qr_active
+            && Candidate::query()->exists()
+            && Company::eligible()->exists();
+    }
+
+    public function canLaunchRunoff(): bool
+    {
+        return $this->status === self::STATUS_CLOSED
+            && ! $this->window_open
+            && $this->mode === self::MODE_SELECT;
+    }
+
+    public function canExportFinalResults(): bool
+    {
+        return in_array($this->status, [self::STATUS_CLOSED, self::STATUS_FINALIZED], true)
+            && ! $this->window_open;
+    }
+
+    public function isReadOnly(): bool
+    {
+        return in_array($this->status, [
+            self::STATUS_OPEN,
+            self::STATUS_CLOSED,
+            self::STATUS_RUNOFF_OPEN,
+            self::STATUS_FINALIZED,
+        ], true);
+    }
+
+    public function statusLabel(): string
+    {
+        return match ($this->status) {
+            self::STATUS_READY => 'Prêt',
+            self::STATUS_OPEN => 'Vote principal ouvert',
+            self::STATUS_CLOSED => 'Clôturé',
+            self::STATUS_RUNOFF_OPEN => 'Départage ouvert',
+            self::STATUS_FINALIZED => 'Finalisé',
+            default => 'Brouillon',
+        };
     }
 }

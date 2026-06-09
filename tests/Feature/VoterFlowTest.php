@@ -20,6 +20,7 @@ function modeAElection(int $threshold = 3, int $candidates = 5): Election
     $election = Election::current();
     $election->update([
         'candidate_threshold' => $threshold,
+        'status' => Election::STATUS_OPEN,
         'window_open' => true,
         'qr_active' => true,
     ]);
@@ -54,14 +55,14 @@ function ineligibleCompany(string $name = 'INELIGIBLE SA'): Company
 
 it('shows the closed message when the voting window is shut', function () {
     modeAElection();
-    Election::current()->update(['window_open' => false]);
+    Election::current()->update(['status' => Election::STATUS_CLOSED, 'window_open' => false, 'closed_at' => now()]);
 
     $this->get(route('vote.start'))->assertOk()->assertViewIs('vote.closed');
 });
 
 it('rejects identification when the window is closed', function () {
     modeAElection();
-    Election::current()->update(['window_open' => false]);
+    Election::current()->update(['status' => Election::STATUS_CLOSED, 'window_open' => false, 'closed_at' => now()]);
     $company = eligibleCompany();
 
     $this->post(route('vote.identify'), [
@@ -202,6 +203,7 @@ it('short-circuits to the auto-election result in Mode B without a ballot', func
     $election = Election::current();
     $election->update([
         'candidate_threshold' => 20,
+        'status' => Election::STATUS_OPEN,
         'window_open' => true,
         'qr_active' => true,
     ]);
@@ -254,7 +256,7 @@ it('refuses to submit when the window closes mid-session', function () {
         'first_name' => 'Awa',
     ]);
 
-    Election::current()->update(['window_open' => false]);
+    Election::current()->update(['status' => Election::STATUS_CLOSED, 'window_open' => false, 'closed_at' => now()]);
 
     // A closed window aborts the flow back to the (now-closed) landing page; no vote is cast.
     $this->post(route('vote.submit'), ['candidates' => $chosen])

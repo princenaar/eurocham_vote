@@ -6,13 +6,20 @@
     <div class="flex items-center justify-between mb-4">
         <p class="text-sm text-slate-600">
             {{ $votesCast }} vote(s) exprimé(s) au tour principal.
+            @unless ($canExportFinalResults)
+                <span class="text-amber-700">Affichage admin provisoire — exports définitifs indisponibles.</span>
+            @endunless
             @if ($election->mode === \App\Models\Election::MODE_AUTO)
                 <span class="text-amber-700">Mode B : tous les candidats sont élus automatiquement.</span>
             @endif
         </p>
         <div class="flex gap-2">
-            <a href="{{ route('admin.results.excel') }}" class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700">Export Excel</a>
-            <a href="{{ route('admin.results.pdf') }}" class="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700">Export PDF</a>
+            @if ($canExportFinalResults)
+                <a href="{{ route('admin.results.excel') }}" class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700">Export Excel</a>
+                <a href="{{ route('admin.results.pdf') }}" class="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700">Export PDF</a>
+            @else
+                <span class="rounded-md bg-slate-100 px-3 py-2 text-sm font-medium text-slate-500">Exports verrouillés</span>
+            @endif
         </div>
     </div>
 
@@ -31,7 +38,7 @@
                     <button type="submit"
                             @disabled($election->window_open)
                             class="rounded-md bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:bg-slate-300 disabled:cursor-not-allowed">
-                        Lancer le départage
+                        Lancer le départage exceptionnel
                     </button>
                 </form>
             </div>

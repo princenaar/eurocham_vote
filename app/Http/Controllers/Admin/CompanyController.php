@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Imports\CompaniesImport;
 use App\Models\Company;
+use App\Models\Election;
 use App\Support\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,11 +24,18 @@ class CompanyController extends Controller
 
     public function showImport(): View
     {
+        abort_unless(Election::current()->canEditConfiguration(), 403);
+
         return view('admin.companies.import');
     }
 
     public function import(Request $request): RedirectResponse
     {
+        if (! Election::current()->canEditConfiguration()) {
+            return redirect()->route('admin.companies.index')
+                ->withErrors(['file' => 'La liste des membres est verrouillée dès l’ouverture du scrutin.']);
+        }
+
         $request->validate([
             'file' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:10240'],
         ], [

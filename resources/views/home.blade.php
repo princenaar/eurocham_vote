@@ -105,7 +105,8 @@
                 <strong class="text-brand-800">Conseil d’Administration</strong>. Le vote est
                 ouvert à distance par le secrétariat pendant une fenêtre unique : passé ce délai,
                 aucun nouveau bulletin n’est accepté. Chaque entreprise membre dispose d’une voix
-                unique et peut, le cas échéant, représenter une autre entreprise par procuration.
+                unique. Une information de procuration peut être enregistrée pour la traçabilité,
+                sans créer de bulletin additionnel.
             </p>
         </div>
     </section>

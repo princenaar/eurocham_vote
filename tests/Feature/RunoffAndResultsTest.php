@@ -22,6 +22,7 @@ function tiedModeAElection(): array
     $election->update([
         'candidate_threshold' => 2,
         'mode' => Election::MODE_SELECT,
+        'status' => Election::STATUS_CLOSED,
         'window_open' => false,
         'qr_active' => true,
         'closed_at' => now(),
@@ -48,6 +49,7 @@ it('launches a runoff for the contested seat when the window is closed', functio
 
     $election->refresh();
     expect($election->current_round)->toBe(2);
+    expect($election->status)->toBe(Election::STATUS_RUNOFF_OPEN);
     expect($election->runoff_seats)->toBe(1);
     expect($election->runoff_candidate_ids)->toMatchArray([$bravo->id, $charlie->id]);
     expect($election->window_open)->toBeTrue();
@@ -55,7 +57,7 @@ it('launches a runoff for the contested seat when the window is closed', functio
 
 it('refuses to launch a runoff while the window is still open', function () {
     [$election] = tiedModeAElection();
-    $election->update(['window_open' => true]);
+    $election->update(['status' => Election::STATUS_OPEN, 'window_open' => true]);
     $admin = User::factory()->create();
 
     $this->actingAs($admin)
@@ -67,7 +69,7 @@ it('refuses to launch a runoff while the window is still open', function () {
 
 it('refuses to launch a runoff when there is no tie', function () {
     $election = Election::current();
-    $election->update(['candidate_threshold' => 2, 'mode' => Election::MODE_SELECT, 'window_open' => false, 'closed_at' => now()]);
+    $election->update(['candidate_threshold' => 2, 'mode' => Election::MODE_SELECT, 'status' => Election::STATUS_CLOSED, 'window_open' => false, 'closed_at' => now()]);
     $alpha = Candidate::create(['name' => 'Alpha']);
     $bravo = Candidate::create(['name' => 'Bravo']);
     $charlie = Candidate::create(['name' => 'Charlie']);
@@ -130,6 +132,7 @@ it('hides public results while voting is open, showing turnout only', function (
     $election = Election::current();
     $election->update([
         'candidate_threshold' => 2, 'mode' => Election::MODE_SELECT,
+        'status' => Election::STATUS_OPEN,
         'window_open' => true, 'qr_active' => true,
     ]);
     Candidate::create(['name' => 'Alpha']);
@@ -165,6 +168,7 @@ it('shows the auto-elected board publicly in Mode B after close', function () {
     $election = Election::current();
     $election->update([
         'candidate_threshold' => 20, 'mode' => Election::MODE_AUTO,
+        'status' => Election::STATUS_CLOSED,
         'window_open' => false, 'closed_at' => now(),
     ]);
     Candidate::create(['name' => 'Alpha', 'auto_elected' => true]);

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
@@ -38,6 +39,14 @@ class Company extends Model
     public function isEligible(): bool
     {
         return $this->survey_2025 || $this->dues_2025 || $this->new_member_2026;
+    }
+
+    public function scopeEligible(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q) => $q
+            ->where('survey_2025', true)
+            ->orWhere('dues_2025', true)
+            ->orWhere('new_member_2026', true));
     }
 
     /**

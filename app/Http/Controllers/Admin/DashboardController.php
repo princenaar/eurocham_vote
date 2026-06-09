@@ -15,18 +15,19 @@ class DashboardController extends Controller
     {
         $election = Election::current();
 
-        $eligibleCount = Company::query()
-            ->where(fn ($q) => $q->where('survey_2025', true)
-                ->orWhere('dues_2025', true)
-                ->orWhere('new_member_2026', true))
-            ->count();
+        $eligibleCount = Company::eligible()->count();
 
         $companyCount = Company::query()->count();
-        $votesCast = Vote::query()->count();
+        $mainVotesCast = Vote::round(1)->count();
+        $currentRoundVotesCast = Vote::round($election->current_round)->count();
 
         // Participation is measured against eligible companies (one vote each — rule 1).
-        $participation = $eligibleCount > 0
-            ? round($votesCast / $eligibleCount * 100, 1)
+        $mainParticipation = $eligibleCount > 0
+            ? round($mainVotesCast / $eligibleCount * 100, 1)
+            : 0.0;
+
+        $currentRoundParticipation = $eligibleCount > 0
+            ? round($currentRoundVotesCast / $eligibleCount * 100, 1)
             : 0.0;
 
         return view('admin.dashboard', [
@@ -34,8 +35,12 @@ class DashboardController extends Controller
             'companyCount' => $companyCount,
             'eligibleCount' => $eligibleCount,
             'candidateCount' => Candidate::query()->count(),
-            'votesCast' => $votesCast,
-            'participation' => $participation,
+            'votesCast' => $mainVotesCast,
+            'mainVotesCast' => $mainVotesCast,
+            'currentRoundVotesCast' => $currentRoundVotesCast,
+            'participation' => $mainParticipation,
+            'mainParticipation' => $mainParticipation,
+            'currentRoundParticipation' => $currentRoundParticipation,
         ]);
     }
 }

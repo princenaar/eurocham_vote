@@ -20,7 +20,7 @@ class HomeController extends Controller
         // State-aware CTA. Mirrors the gates used by VoteController / ResultsController.
         if ($election->isVotingOpen()) {
             $cta = ['label' => 'Accéder au vote', 'route' => route('vote.start'), 'state' => 'open'];
-        } elseif ($election->closed_at !== null) {
+        } elseif ($election->canExportFinalResults()) {
             $cta = ['label' => 'Voir les résultats', 'route' => route('results.public'), 'state' => 'closed'];
         } else {
             $cta = ['label' => 'Suivre le scrutin', 'route' => route('results.public'), 'state' => 'pending'];

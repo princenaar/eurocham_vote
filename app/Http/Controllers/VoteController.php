@@ -51,9 +51,7 @@ class VoteController extends Controller
 
         return view('vote.start', [
             'election' => $election,
-            'companies' => Company::query()->orderBy('name')->get()
-                ->filter->isEligible()
-                ->values(),
+            'companies' => Company::eligible()->orderBy('name')->get(),
         ]);
     }
 
@@ -181,7 +179,8 @@ class VoteController extends Controller
         $representative = $request->session()->get(self::SESSION_REP);
         $round = $election->current_round;
 
-        $lock = Cache::lock("vote:company:{$company->id}:round:{$round}", 10);
+        $lock = Cache::store(config('cache.vote_lock_store'))
+            ->lock("vote:company:{$company->id}:round:{$round}", 10);
 
         try {
             // Wait briefly for a concurrent submission to finish, then proceed.

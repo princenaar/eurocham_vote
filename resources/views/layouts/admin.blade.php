@@ -29,6 +29,7 @@
                 ['admin.candidates.index', 'Candidats'],
                 ['admin.election.edit', 'Scrutin & QR'],
                 ['admin.results.index', 'Résultats'],
+                ['admin.audit.index', 'Traçabilité'],
             ];
         @endphp
         <nav class="px-3 pb-4 lg:block" :class="open ? 'block' : 'hidden'">
