@@ -38,5 +38,7 @@ class DatabaseSeeder extends Seeder
 
         // Ensure the single configurable scrutin exists (window closed by default).
         Election::current();
+
+        $this->call(CandidateSeeder::class);
     }
 }
