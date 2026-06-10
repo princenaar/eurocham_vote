@@ -28,7 +28,7 @@ class VoteController extends Controller
 {
     private const SESSION_COMPANY = 'vote.company_id';
     private const SESSION_REP = 'vote.representative';
-    private const SESSION_PROXY = 'vote.proxy_company_name';
+    private const SESSION_PROXY = 'vote.is_proxy';
 
     /**
      * QR landing. Routes the voter to the right screen based on scrutin state:
@@ -74,7 +74,7 @@ class VoteController extends Controller
             'company_id' => ['required', 'integer', 'exists:companies,id'],
             'last_name' => ['required', 'string', 'max:255'],
             'first_name' => ['required', 'string', 'max:255'],
-            'proxy_company_name' => ['nullable', 'string', 'max:255'],
+            'is_proxy' => ['nullable', 'boolean'],
         ], [
             'company_id.required' => 'Veuillez sélectionner votre entreprise membre.',
             'company_id.exists' => 'Entreprise inconnue. Veuillez contacter le secrétariat EUROCHAM.',
@@ -87,7 +87,7 @@ class VoteController extends Controller
         if (! $company->isEligible()) {
             throw ValidationException::withMessages([
                 'company_id' => "L’entreprise « {$company->name} » n’est pas à jour de ses obligations "
-                    .'et ne peut pas voter. Veuillez contacter le secrétariat EUROCHAM.',
+                    .'de cotisation et d’enquête, et ne peut pas voter. Veuillez contacter le secrétariat EUROCHAM.',
             ]);
         }
 
@@ -103,7 +103,7 @@ class VoteController extends Controller
             'last_name' => $data['last_name'],
             'first_name' => $data['first_name'],
         ]);
-        $request->session()->put(self::SESSION_PROXY, $data['proxy_company_name'] ?? null);
+        $request->session()->put(self::SESSION_PROXY, (bool) ($data['is_proxy'] ?? false));
 
         return redirect()->route('vote.ballot');
     }
@@ -124,7 +124,7 @@ class VoteController extends Controller
             'election' => $election,
             'company' => $company,
             'representative' => $request->session()->get(self::SESSION_REP),
-            'proxyCompanyName' => $request->session()->get(self::SESSION_PROXY),
+            'isProxy' => (bool) $request->session()->get(self::SESSION_PROXY, false),
             'candidates' => $election->ballotCandidates(),
             'required' => $election->requiredSelections(),
             'isRunoff' => $election->isRunoff(),
@@ -149,7 +149,7 @@ class VoteController extends Controller
             'election' => $election,
             'company' => $company,
             'representative' => $request->session()->get(self::SESSION_REP),
-            'proxyCompanyName' => $request->session()->get(self::SESSION_PROXY),
+            'isProxy' => (bool) $request->session()->get(self::SESSION_PROXY, false),
             'candidates' => Candidate::query()->whereIn('id', $chosen)
                 ->orderBy('display_order')->orderBy('name')->get(),
             'chosen' => $chosen,
@@ -175,7 +175,7 @@ class VoteController extends Controller
         [$election, $company] = $guard;
         $chosen = $this->validateSelections($request, $election);
 
-        $proxy = $request->session()->get(self::SESSION_PROXY);
+        $isProxy = (bool) $request->session()->get(self::SESSION_PROXY, false);
         $representative = $request->session()->get(self::SESSION_REP);
         $round = $election->current_round;
 
@@ -184,16 +184,16 @@ class VoteController extends Controller
 
         try {
             // Wait briefly for a concurrent submission to finish, then proceed.
-            $reference = $lock->block(3, function () use ($company, $round, $proxy, $chosen) {
+            $reference = $lock->block(3, function () use ($company, $round, $isProxy, $chosen) {
                 $this->assertNotYetVoted($company, $round);
 
                 $reference = $this->generateReference();
 
-                DB::transaction(function () use ($company, $round, $proxy, $reference, $chosen) {
+                DB::transaction(function () use ($company, $round, $isProxy, $reference, $chosen) {
                     $vote = Vote::create([
                         'company_id' => $company->id,
                         'round' => $round,
-                        'proxy_company_name' => $proxy,
+                        'is_proxy' => $isProxy,
                         'reference_number' => $reference,
                         'voted_at' => now(),
                     ]);
@@ -235,7 +235,7 @@ class VoteController extends Controller
                 'company_id' => $company->id,
                 'reference_number' => $reference,
                 'representative' => $representative,
-                'proxy_company_name' => $proxy,
+                'is_proxy' => $isProxy,
             ],
         );
 

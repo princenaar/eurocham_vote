@@ -29,6 +29,7 @@ function remediationReadyElection(): Election
     Company::create([
         'name' => 'Entreprise Eligible',
         'normalized_name' => Company::normalizeName('Entreprise Eligible'),
+        'survey_2025' => true,
         'dues_2025' => true,
     ]);
 
@@ -92,7 +93,7 @@ it('blocks final exports before the election is closed', function () {
     $this->actingAs($admin)->get(route('admin.results.pdf'))->assertForbidden();
 });
 
-it('keeps proxy information as audit text without creating an additional ballot', function () {
+it('records a proxy vote flag without creating an extra ballot row', function () {
     $election = remediationReadyElection();
     $election->update(['status' => Election::STATUS_OPEN, 'window_open' => true, 'qr_active' => true]);
     $company = Company::first();
@@ -102,18 +103,18 @@ it('keeps proxy information as audit text without creating an additional ballot'
         'company_id' => $company->id,
         'last_name' => 'Diop',
         'first_name' => 'Awa',
-        'proxy_company_name' => 'Entreprise Mandante',
+        'is_proxy' => '1',
     ])->assertRedirect(route('vote.ballot'));
 
     $this->get(route('vote.ballot'))
         ->assertOk()
-        ->assertSee('ne crée pas de second bulletin');
+        ->assertSee('Vote par procuration');
 
     $this->post(route('vote.submit'), ['candidates' => $chosen])
         ->assertRedirect(route('vote.confirmation'));
 
     expect(Vote::count())->toBe(1);
-    expect(Vote::first()->proxy_company_name)->toBe('Entreprise Mandante');
+    expect(Vote::first()->is_proxy)->toBeTrue();
 });
 
 it('rate limits repeated admin login failures', function () {

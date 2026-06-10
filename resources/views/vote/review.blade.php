@@ -13,9 +13,9 @@
         <div class="mt-6 rounded-lg border border-slate-200 bg-white">
             <div class="border-b border-slate-200 px-5 py-3 text-sm text-slate-600">
                 Entreprise : <span class="font-medium text-slate-800">{{ $company->name }}</span>
-                @if ($proxyCompanyName)
-                    <br>Information de procuration : <span class="font-medium text-slate-800">{{ $proxyCompanyName }}</span>
-                    <br><span class="text-xs text-slate-500">Mention enregistrée pour audit, sans bulletin additionnel.</span>
+                @if ($isProxy)
+                    <br><span class="font-medium text-slate-800">Vote par procuration</span>
+                    <br><span class="text-xs text-slate-500">Ce bulletin consomme la voix de l’entreprise sélectionnée.</span>
                 @endif
             </div>
             <div class="px-5 py-3">

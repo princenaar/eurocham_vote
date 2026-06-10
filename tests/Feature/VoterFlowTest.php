@@ -38,6 +38,7 @@ function eligibleCompany(string $name = 'ACME SARL'): Company
     return Company::create([
         'name' => $name,
         'normalized_name' => Company::normalizeName($name),
+        'survey_2025' => true,
         'dues_2025' => true,
     ]);
 }
@@ -115,6 +116,7 @@ it('records a vote with exactly the required number of selections', function () 
     $vote = Vote::query()->where('company_id', $company->id)->first();
     expect($vote)->not->toBeNull();
     expect($vote->reference_number)->not->toBeEmpty();
+    expect($vote->is_proxy)->toBeFalse();
     expect($vote->selections()->count())->toBe(3);
 
     // The confirmation screen renders and shows the reference number (rule 5).
@@ -122,6 +124,40 @@ it('records a vote with exactly the required number of selections', function () 
         ->assertOk()
         ->assertViewIs('vote.confirmation')
         ->assertSee($vote->reference_number);
+});
+
+it('records a proxy vote for the selected represented company', function () {
+    modeAElection(threshold: 3, candidates: 5);
+    $represented = eligibleCompany('Entreprise Représentée');
+    $chosen = Candidate::query()->take(3)->pluck('id')->all();
+
+    $this->post(route('vote.identify'), [
+        'company_id' => $represented->id,
+        'last_name' => 'Diop',
+        'first_name' => 'Awa',
+        'is_proxy' => '1',
+    ])->assertRedirect(route('vote.ballot'));
+
+    $this->get(route('vote.ballot'))
+        ->assertOk()
+        ->assertSee('Vote par procuration');
+
+    $this->post(route('vote.review'), ['candidates' => $chosen])
+        ->assertOk()
+        ->assertSee('Vote par procuration');
+
+    $this->post(route('vote.submit'), ['candidates' => $chosen])
+        ->assertRedirect(route('vote.confirmation'));
+
+    $vote = Vote::query()->where('company_id', $represented->id)->first();
+    expect($vote)->not->toBeNull();
+    expect($vote->is_proxy)->toBeTrue();
+
+    $this->post(route('vote.identify'), [
+        'company_id' => $represented->id,
+        'last_name' => 'Sarr',
+        'first_name' => 'Moussa',
+    ])->assertSessionHasErrors('company_id');
 });
 
 it('renders the review screen with the chosen candidates', function () {
