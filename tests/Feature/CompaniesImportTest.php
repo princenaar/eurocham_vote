@@ -40,6 +40,16 @@ it('upserts by normalized name on re-import', function () {
     expect(Company::first()->isEligible())->toBeTrue();
 });
 
+it('accepts membres as a company-name header alias', function () {
+    importRows([
+        ['membres' => '2S CONSULTING', 'cotisation_2025' => 'oui', 'enquete_2025' => 'oui'],
+    ]);
+
+    expect(Company::count())->toBe(1);
+    expect(Company::first()->name)->toBe('2S CONSULTING');
+    expect(Company::first()->isEligible())->toBeTrue();
+});
+
 it('skips rows without a company name and reports them', function () {
     $import = importRows([
         ['nom' => 'ACME SA', 'cotisation_2025' => 'oui'],

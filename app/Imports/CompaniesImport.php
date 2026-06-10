@@ -18,7 +18,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 class CompaniesImport implements ToCollection, WithHeadingRow
 {
     /** Header aliases (normalized) → canonical field. */
-    private const NAME_KEYS = ['nom', 'entreprise', 'societe', 'société', 'raison_sociale', 'membre'];
+    private const NAME_KEYS = ['nom', 'entreprise', 'societe', 'société', 'raison_sociale', 'membre', 'membres'];
     private const SURVEY_KEYS = ['enquete_2025', 'enquête_2025', 'enquete', 'survey_2025'];
     private const DUES_KEYS = ['cotisation_2025', 'cotisations_2025', 'cotisation', 'dues_2025'];
     private const NEW_MEMBER_KEYS = ['nouveau_membre_2026', 'nouveau_membre', 'new_member_2026'];
