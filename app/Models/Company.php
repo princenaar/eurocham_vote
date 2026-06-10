@@ -33,19 +33,20 @@ class Company extends Model
     }
 
     /**
-     * Eligible if up to date on the 2025 survey, OR 2025 dues, OR — for new
-     * members — entry fees + 2026 dues (new_member_2026). CLAUDE.md rule 2.
+     * Eligible if up to date on both the 2025 survey and 2025 dues, OR — for
+     * new members — entry fees + 2026 dues (new_member_2026).
      */
     public function isEligible(): bool
     {
-        return $this->survey_2025 || $this->dues_2025 || $this->new_member_2026;
+        return ($this->survey_2025 && $this->dues_2025) || $this->new_member_2026;
     }
 
     public function scopeEligible(Builder $query): Builder
     {
         return $query->where(fn (Builder $q) => $q
-            ->where('survey_2025', true)
-            ->orWhere('dues_2025', true)
+            ->where(fn (Builder $q) => $q
+                ->where('survey_2025', true)
+                ->where('dues_2025', true))
             ->orWhere('new_member_2026', true));
     }
 

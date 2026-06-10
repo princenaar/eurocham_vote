@@ -20,8 +20,11 @@
                     <li><code>Cotisation 2025</code> — Oui/Non, X, 1/0</li>
                     <li><code>Nouveau membre 2026</code> — Oui/Non, X, 1/0</li>
                 </ul>
-                <p class="mt-2">Une entreprise est éligible si l’une de ces trois conditions est remplie.
-                Les imports répétés mettent à jour les entreprises existantes (par nom).</p>
+                <p class="mt-2">
+                    Une entreprise est éligible si la cotisation 2025 et l’enquête 2025 sont à jour,
+                    ou si elle est marquée comme nouveau membre 2026. Les imports répétés mettent à jour
+                    les entreprises existantes (par nom).
+                </p>
             </div>
 
             <div class="flex gap-3">

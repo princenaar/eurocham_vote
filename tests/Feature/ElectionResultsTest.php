@@ -34,6 +34,7 @@ function makeCompanies(int $n): array
     return collect(range(1, $n))->map(fn ($i) => Company::create([
         'name' => "Société {$i}",
         'normalized_name' => "societe {$i}",
+        'survey_2025' => true,
         'dues_2025' => true,
     ]))->all();
 }

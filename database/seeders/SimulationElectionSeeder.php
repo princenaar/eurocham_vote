@@ -74,8 +74,8 @@ class SimulationElectionSeeder extends Seeder
                     ['normalized_name' => Company::normalizeName($name)],
                     [
                         'name' => $name,
-                        'survey_2025' => $index % 3 === 0,
-                        'dues_2025' => $index % 3 !== 0,
+                        'survey_2025' => $index % 4 !== 0,
+                        'dues_2025' => $index % 5 !== 0,
                         'new_member_2026' => $index > 26,
                     ],
                 );
@@ -89,9 +89,7 @@ class SimulationElectionSeeder extends Seeder
                 $vote = Vote::firstOrCreate(
                     ['company_id' => $company->id, 'round' => 1],
                     [
-                        'proxy_company_name' => ($index + 1) % 7 === 0
-                            ? sprintf('Simulation - Mandante %02d', $index + 1)
-                            : null,
+                        'is_proxy' => ($index + 1) % 7 === 0,
                         'reference_number' => $reference,
                         'voted_at' => now()->subMinutes(30 - $index),
                     ],

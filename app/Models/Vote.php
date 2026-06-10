@@ -20,7 +20,7 @@ class Vote extends Model
     protected $fillable = [
         'company_id',
         'round',
-        'proxy_company_name',
+        'is_proxy',
         'reference_number',
         'voted_at',
     ];
@@ -29,6 +29,7 @@ class Vote extends Model
     {
         return [
             'round' => 'integer',
+            'is_proxy' => 'boolean',
             'voted_at' => 'datetime',
         ];
     }

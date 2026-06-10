@@ -25,7 +25,7 @@
                     <th class="px-4 py-2 font-medium">Enquête 2025</th>
                     <th class="px-4 py-2 font-medium">Cotisation 2025</th>
                     <th class="px-4 py-2 font-medium">Nouveau membre 2026</th>
-                    <th class="px-4 py-2 font-medium">Éligible</th>
+                    <th class="px-4 py-2 font-medium">Éligible (cotisation + enquête)</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">

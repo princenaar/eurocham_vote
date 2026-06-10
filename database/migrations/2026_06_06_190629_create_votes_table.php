@@ -20,8 +20,8 @@ return new class extends Migration
             $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->unique('company_id');
 
-            // Optional proxy: the represented company's name when present (rule 3).
-            $table->string('proxy_company_name')->nullable();
+            // Vote cast by proxy for the selected company when true.
+            $table->boolean('is_proxy')->default(false);
 
             // Unique timestamped reference number shown after submit (rule 5).
             $table->string('reference_number')->unique();

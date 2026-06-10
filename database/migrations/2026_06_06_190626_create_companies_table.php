@@ -18,7 +18,7 @@ return new class extends Migration
             // Normalized key (lowercased + trimmed) used to match imports and voter input.
             $table->string('normalized_name')->unique();
 
-            // Eligibility inputs (rule 2): up to date on the 2025 survey, OR 2025 dues,
+            // Eligibility inputs: up to date on both the 2025 survey and 2025 dues,
             // OR — for new members — entry fees + 2026 dues (captured as new_member_2026).
             $table->boolean('survey_2025')->default(false);
             $table->boolean('dues_2025')->default(false);
