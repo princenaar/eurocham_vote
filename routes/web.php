@@ -56,6 +56,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('election/window', [ElectionController::class, 'toggleWindow'])->name('election.window');
         Route::post('election/qr', [ElectionController::class, 'toggleQr'])->name('election.qr.toggle');
         Route::post('election/runoff', [ElectionController::class, 'launchRunoff'])->name('election.runoff');
+        Route::get('election/qr/fullscreen', [ElectionController::class, 'qrFullscreen'])->name('election.qr.fullscreen');
         Route::get('election/qr.svg', [ElectionController::class, 'qr'])->name('election.qr');
 
         Route::get('results', [ResultController::class, 'index'])->name('results.index');

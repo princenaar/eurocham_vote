@@ -143,4 +143,11 @@ class ElectionController extends Controller
 
         return response((string) $svg, 200, ['Content-Type' => 'image/svg+xml']);
     }
+
+    public function qrFullscreen(): View
+    {
+        return view('admin.election.qr-fullscreen', [
+            'voteUrl' => route('vote.start'),
+        ]);
+    }
 }

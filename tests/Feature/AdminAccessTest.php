@@ -20,6 +20,20 @@ it('lets an authenticated admin reach the dashboard', function () {
     $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk();
 });
 
+it('shows the full-screen QR code link to authenticated admins', function () {
+    $admin = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->get(route('admin.election.edit'))
+        ->assertOk()
+        ->assertSee('Afficher le QR code en pleine page');
+
+    $this->actingAs($admin)
+        ->get(route('admin.election.qr.fullscreen'))
+        ->assertOk()
+        ->assertSee(route('vote.start'));
+});
+
 it('rejects bad credentials', function () {
     User::factory()->create(['email' => 'admin@eurocham.sn', 'password' => bcrypt('correct')]);
 
