@@ -44,52 +44,90 @@
 
     <p class="muted">
         {{ $votesCast }} vote(s) exprimé(s).
-        @if ($election->mode === \App\Models\Election::MODE_AUTO)
+        @if ($election->isQuestionsVote())
+            Vote par questions Oui / Non / Abstention. Les pourcentages Oui/Non sont calculés sur les suffrages exprimés.
+        @elseif ($election->mode === \App\Models\Election::MODE_AUTO)
             Mode B : élection automatique de tous les candidats.
         @elseif ($election->mode === \App\Models\Election::MODE_SELECT)
             Mode A : sélection de {{ $election->candidate_threshold }} candidats par votant.
         @endif
     </p>
 
-    @if ($hasUnresolvedTie && $pendingTie)
+    @if ($election->isBoardVote() && $hasUnresolvedTie && $pendingTie)
         <p class="muted" style="color:#b45309;">
             Égalité pour {{ $pendingTie['seats'] }} siège(s) entre :
             {{ $pendingTie['tied']->pluck('name')->implode(', ') }} — départage requis.
         </p>
     @endif
 
-    <table>
-        <thead>
-            <tr>
-                <th>Rang</th>
-                <th>Candidat</th>
-                <th>Voix</th>
-                <th>Élu</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($ranking as $row)
+    @if ($election->isQuestionsVote())
+        <table>
+            <thead>
                 <tr>
-                    <td>{{ $row['rank'] }}</td>
-                    <td>{{ $row['candidate']->name }}</td>
-                    <td class="num">{{ $row['votes'] }}</td>
-                    <td>{{ in_array($row['candidate']->id, $electedIds, true) ? 'Oui' : 'Non' }}</td>
+                    <th>Question</th>
+                    <th>Oui</th>
+                    <th>Non</th>
+                    <th>Abstention</th>
+                    <th>Résultat</th>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach ($questionResults as $row)
+                    <tr>
+                        <td>{{ $row['question']->title }}</td>
+                        <td class="num">{{ $row['yes'] }} ({{ $row['yes_percent'] }}%)</td>
+                        <td class="num">{{ $row['no'] }} ({{ $row['no_percent'] }}%)</td>
+                        <td class="num">{{ $row['abstain'] }}</td>
+                        <td>{{ $row['result'] }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @else
+        <table>
+            <thead>
+                <tr>
+                    <th>Rang</th>
+                    <th>Photo</th>
+                    <th>Candidat</th>
+                    <th>Structure</th>
+                    <th>Voix</th>
+                    <th>Élu</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($ranking as $row)
+                    <tr>
+                        <td>{{ $row['rank'] }}</td>
+                        <td>
+                            @if ($row['candidate']->photo_path && file_exists(storage_path('app/public/'.$row['candidate']->photo_path)))
+                                <img src="{{ storage_path('app/public/'.$row['candidate']->photo_path) }}" alt="Photo" style="height:32px; width:32px; object-fit:cover;">
+                            @else
+                                —
+                            @endif
+                        </td>
+                        <td>{{ $row['candidate']->name }}</td>
+                        <td>{{ $row['candidate']->assemblyCompany?->name }}</td>
+                        <td class="num">{{ $row['votes'] }}</td>
+                        <td>{{ in_array($row['candidate']->id, $electedIds, true) ? 'Oui' : 'Non' }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
 
     @if ($isRunoff && $runoffRanking)
         <h1 style="font-size:14px; margin-top:20px; color:#16386f;">Vote de départage (tour {{ $election->current_round }})</h1>
         <table>
             <thead>
-                <tr><th>Rang</th><th>Candidat</th><th>Voix</th></tr>
+                <tr><th>Rang</th><th>Candidat</th><th>Structure</th><th>Voix</th></tr>
             </thead>
             <tbody>
                 @foreach ($runoffRanking as $row)
                     <tr>
                         <td>{{ $row['rank'] }}</td>
                         <td>{{ $row['candidate']->name }}</td>
+                        <td>{{ $row['candidate']->assemblyCompany?->name }}</td>
                         <td class="num">{{ $row['votes'] }}</td>
                     </tr>
                 @endforeach

@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\Election;
-use App\Models\Vote;
 use App\Support\ElectionResults;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -16,22 +16,30 @@ use Illuminate\View\View;
  */
 class ResultsController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $election = Election::current();
+        $election = $this->selectedElection($request);
 
         // Reveal only after a real close. While the window is open (incl. a live runoff)
         // or the scrutin has never been closed, show turnout only — never choices (rule 7).
         if ($election->window_open || ! $election->canExportFinalResults()) {
             return view('vote.results-pending', [
                 'election' => $election,
-                'votesCast' => Vote::round($election->current_round)->count(),
+                'votesCast' => $election->votes()->round($election->current_round)->count(),
                 'eligibleCount' => $this->eligibleCount(),
                 'isRunoff' => $election->isRunoff(),
             ]);
         }
 
         $results = ElectionResults::for($election);
+
+        if ($election->isQuestionsVote()) {
+            return view('vote.results-questions', [
+                'election' => $election,
+                'questionResults' => $results->questionResults(),
+                'votesCast' => $results->votesCast(1),
+            ]);
+        }
 
         return view('vote.results', [
             'election' => $election,
@@ -48,8 +56,19 @@ class ResultsController extends Controller
 
     private function eligibleCount(): int
     {
-        return Company::query()
-            ->eligible()
-            ->count();
+        return $this->selectedElection(request())->assembly->eligibleCompanies()->count();
+    }
+
+    private function selectedElection(Request $request): Election
+    {
+        $id = $request->input('election');
+
+        if ($id) {
+            return Election::query()->with('assembly')->findOrFail($id);
+        }
+
+        return Election::active()
+            ?? Election::query()->with('assembly')->where('status', Election::STATUS_CLOSED)->latest('closed_at')->first()
+            ?? Election::current()->load('assembly');
     }
 }

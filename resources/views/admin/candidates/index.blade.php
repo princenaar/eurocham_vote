@@ -13,7 +13,7 @@
             @endif
         </p>
         @if ($election->canEditConfiguration())
-            <a href="{{ route('admin.candidates.create') }}"
+            <a href="{{ route('admin.candidates.create', ['election' => $election->id]) }}"
                class="rounded-md bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
                 + Ajouter un candidat
             </a>
@@ -29,7 +29,9 @@
             <thead class="bg-slate-50 text-left text-slate-500">
                 <tr>
                     <th class="px-4 py-2 font-medium">Ordre</th>
+                    <th class="px-4 py-2 font-medium">Photo</th>
                     <th class="px-4 py-2 font-medium">Nom</th>
+                    <th class="px-4 py-2 font-medium">Structure</th>
                     <th class="px-4 py-2 font-medium">Élu auto.</th>
                     <th class="px-4 py-2 font-medium text-right">Actions</th>
                 </tr>
@@ -38,7 +40,17 @@
                 @forelse ($candidates as $candidate)
                     <tr>
                         <td class="px-4 py-2 text-slate-500">{{ $candidate->display_order }}</td>
+                        <td class="px-4 py-2">
+                            @if ($candidate->photo_path)
+                                <img src="{{ $candidate->photoUrl() }}" alt="Photo de {{ $candidate->name }}" class="h-10 w-10 rounded object-cover">
+                            @else
+                                <span class="flex h-10 w-10 items-center justify-center rounded bg-slate-100 text-xs font-semibold text-slate-500">
+                                    {{ mb_substr($candidate->name, 0, 1) }}
+                                </span>
+                            @endif
+                        </td>
                         <td class="px-4 py-2 font-medium text-slate-900">{{ $candidate->name }}</td>
+                        <td class="px-4 py-2 text-slate-600">{{ $candidate->assemblyCompany?->name }}</td>
                         <td class="px-4 py-2">{{ $candidate->auto_elected ? 'Oui' : '—' }}</td>
                         <td class="px-4 py-2 text-right">
                             @if ($election->canEditConfiguration())
@@ -54,7 +66,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="4" class="px-4 py-6 text-center text-slate-400">Aucun candidat.</td></tr>
+                    <tr><td colspan="6" class="px-4 py-6 text-center text-slate-400">Aucun candidat.</td></tr>
                 @endforelse
             </tbody>
         </table>

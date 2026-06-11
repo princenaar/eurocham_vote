@@ -18,19 +18,29 @@ class ResultsExport implements FromCollection, WithHeadings, WithMapping
     /** @var array<int, int> */
     private array $electedIds;
 
-    public function __construct()
+    public function __construct(private readonly Election $election)
     {
-        $this->electedIds = ElectionResults::for(Election::current())->electedBoard()->pluck('id')->all();
+        $this->electedIds = $this->election->isBoardVote()
+            ? ElectionResults::for($this->election)->electedBoard()->pluck('id')->all()
+            : [];
     }
 
     public function collection(): Collection
     {
-        return ElectionResults::for(Election::current())->mainRanking();
+        $results = ElectionResults::for($this->election);
+
+        return $this->election->isQuestionsVote()
+            ? $results->questionResults()
+            : $results->mainRanking();
     }
 
     public function headings(): array
     {
-        return ['Rang', 'Candidat', 'Voix', 'Élu'];
+        if ($this->election->isQuestionsVote()) {
+            return ['Question', 'Oui', 'Non', 'Abstention', '% Oui', '% Non', 'Résultat'];
+        }
+
+        return ['Rang', 'Candidat', 'Structure', 'Voix', 'Élu'];
     }
 
     /**
@@ -38,9 +48,22 @@ class ResultsExport implements FromCollection, WithHeadings, WithMapping
      */
     public function map($row): array
     {
+        if ($this->election->isQuestionsVote()) {
+            return [
+                $row['question']->title,
+                $row['yes'],
+                $row['no'],
+                $row['abstain'],
+                $row['yes_percent'].'%',
+                $row['no_percent'].'%',
+                $row['result'],
+            ];
+        }
+
         return [
             $row['rank'],
             $row['candidate']->name,
+            $row['candidate']->assemblyCompany?->name,
             $row['votes'],
             in_array($row['candidate']->id, $this->electedIds, true) ? 'Oui' : 'Non',
         ];

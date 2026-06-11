@@ -8,6 +8,7 @@ use App\Models\Election;
 use App\Support\AuditLogger;
 use App\Support\ElectionResults;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
@@ -15,25 +16,27 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ResultController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        return view('admin.results.index', $this->data());
+        return view('admin.results.index', $this->data($this->selectedElection($request)));
     }
 
-    public function exportExcel(): BinaryFileResponse
+    public function exportExcel(Request $request): BinaryFileResponse
     {
-        $this->ensureFinalExportAllowed();
-        AuditLogger::log('results.export', 'Export Excel des résultats');
+        $election = $this->selectedElection($request);
+        $this->ensureFinalExportAllowed($election);
+        AuditLogger::log('results.export', 'Export Excel des résultats', ['election_id' => $election->id]);
 
-        return Excel::download(new ResultsExport(), 'resultats_eurocham_2026.xlsx');
+        return Excel::download(new ResultsExport($election), 'resultats_eurocham_2026.xlsx');
     }
 
-    public function exportPdf(): Response
+    public function exportPdf(Request $request): Response
     {
-        $this->ensureFinalExportAllowed();
-        AuditLogger::log('results.export', 'Export PDF des résultats');
+        $election = $this->selectedElection($request);
+        $this->ensureFinalExportAllowed($election);
+        AuditLogger::log('results.export', 'Export PDF des résultats', ['election_id' => $election->id]);
 
-        $pdf = Pdf::loadView('admin.results.pdf', $this->data());
+        $pdf = Pdf::loadView('admin.results.pdf', $this->data($election));
 
         return $pdf->download('resultats_eurocham_2026.pdf');
     }
@@ -45,14 +48,14 @@ class ResultController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function data(): array
+    private function data(Election $election): array
     {
-        $election = Election::current();
         $results = ElectionResults::for($election);
 
         return [
             'election' => $election,
-            'ranking' => $results->mainRanking(),
+            'elections' => $election->assembly->elections()->get(),
+            'ranking' => $election->isBoardVote() ? $results->mainRanking() : null,
             'electedIds' => $results->electedBoard()->pluck('id')->all(),
             'electedBoard' => $results->electedBoard(),
             'hasUnresolvedTie' => $results->hasUnresolvedTie(),
@@ -60,13 +63,25 @@ class ResultController extends Controller
             'isRunoff' => $election->isRunoff(),
             'runoffRanking' => $election->isRunoff() ? $results->ranking($election->current_round) : null,
             'votesCast' => $results->votesCast(1),
+            'questionResults' => $election->isQuestionsVote() ? $results->questionResults() : null,
             'generatedAt' => now(),
             'canExportFinalResults' => $election->canExportFinalResults(),
         ];
     }
 
-    private function ensureFinalExportAllowed(): void
+    private function ensureFinalExportAllowed(Election $election): void
     {
-        abort_unless(Election::current()->canExportFinalResults(), 403, 'Les exports définitifs sont disponibles uniquement après clôture du scrutin.');
+        abort_unless($election->canExportFinalResults(), 403, 'Les exports définitifs sont disponibles uniquement après clôture du scrutin.');
+    }
+
+    private function selectedElection(Request $request): Election
+    {
+        $id = $request->input('election');
+
+        if ($id) {
+            return Election::query()->with('assembly')->findOrFail($id);
+        }
+
+        return Election::current()->load('assembly');
     }
 }

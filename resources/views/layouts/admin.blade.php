@@ -25,6 +25,7 @@
         @php
             $nav = [
                 ['admin.dashboard', 'Tableau de bord'],
+                ['admin.assemblies.index', 'AG & Votes'],
                 ['admin.companies.index', 'Entreprises'],
                 ['admin.candidates.index', 'Candidats'],
                 ['admin.election.edit', 'Scrutin & QR'],

@@ -4,13 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * The single configurable scrutin gating the voter flow (CLAUDE.md rules 4 & 6).
+ * One vote/scrutin inside an AG. Board votes keep the original CA election flow;
+ * question votes group several Oui/Non/Abstention sub-votes.
  */
 class Election extends Model
 {
     use HasFactory;
+
+    public const TYPE_BOARD = 'board';
+    public const TYPE_QUESTIONS = 'questions';
+    public const ACTIVE_SLOT_GLOBAL = 'global';
 
     public const MODE_SELECT = 'A';   // > threshold candidates: voter picks exactly <threshold>.
     public const MODE_AUTO = 'B';     // <= threshold candidates: all auto-elected, no ballot.
@@ -23,8 +30,10 @@ class Election extends Model
     public const STATUS_FINALIZED = 'finalized';
 
     protected $fillable = [
-        'singleton_key',
+        'assembly_id',
         'name',
+        'type',
+        'display_order',
         'status',
         'mode',
         'candidate_threshold',
@@ -33,6 +42,7 @@ class Election extends Model
         'runoff_seats',
         'window_open',
         'qr_active',
+        'active_slot',
         'opened_at',
         'closed_at',
     ];
@@ -41,6 +51,7 @@ class Election extends Model
     {
         return [
             'candidate_threshold' => 'integer',
+            'display_order' => 'integer',
             'current_round' => 'integer',
             'runoff_candidate_ids' => 'array',
             'runoff_seats' => 'integer',
@@ -52,14 +63,70 @@ class Election extends Model
     }
 
     /**
-     * The single election row. Created on first access so the app always has one scrutin.
+     * Compatibility helper for the default CA vote in the latest AG.
      */
     public static function current(): self
     {
+        $assembly = Assembly::current();
+
         return static::query()->firstOrCreate(
-            ['singleton_key' => 'current'],
-            ['status' => self::STATUS_DRAFT, 'current_round' => 1],
+            ['assembly_id' => $assembly->id, 'type' => self::TYPE_BOARD],
+            [
+                'name' => 'Élection du Conseil d’Administration 2026',
+                'status' => self::STATUS_DRAFT,
+                'current_round' => 1,
+                'display_order' => 1,
+            ],
         );
+    }
+
+    public static function active(): ?self
+    {
+        return static::query()
+            ->with('assembly')
+            ->where('active_slot', self::ACTIVE_SLOT_GLOBAL)
+            ->first()
+            ?? static::query()
+                ->with('assembly')
+                ->where('window_open', true)
+                ->where('qr_active', true)
+                ->whereIn('status', [self::STATUS_OPEN, self::STATUS_RUNOFF_OPEN])
+                ->orderByDesc('opened_at')
+                ->orderByDesc('id')
+                ->first();
+    }
+
+    public function assembly(): BelongsTo
+    {
+        return $this->belongsTo(Assembly::class);
+    }
+
+    public function candidates(): HasMany
+    {
+        return $this->hasMany(Candidate::class)
+            ->with('assemblyCompany')
+            ->orderBy('display_order')
+            ->orderBy('name');
+    }
+
+    public function questions(): HasMany
+    {
+        return $this->hasMany(ElectionQuestion::class)->orderBy('display_order')->orderBy('id');
+    }
+
+    public function votes(): HasMany
+    {
+        return $this->hasMany(Vote::class);
+    }
+
+    public function isBoardVote(): bool
+    {
+        return $this->type === self::TYPE_BOARD;
+    }
+
+    public function isQuestionsVote(): bool
+    {
+        return $this->type === self::TYPE_QUESTIONS;
     }
 
     /**
@@ -85,7 +152,14 @@ class Election extends Model
      */
     public function syncModeFromCandidates(): void
     {
-        $count = Candidate::query()->count();
+        if (! $this->isBoardVote()) {
+            $this->mode = null;
+            $this->save();
+
+            return;
+        }
+
+        $count = $this->candidates()->count();
         $mode = $this->resolveMode($count);
 
         $this->mode = $mode;
@@ -94,7 +168,7 @@ class Election extends Model
         }
         $this->save();
 
-        Candidate::query()->update(['auto_elected' => $mode === self::MODE_AUTO]);
+        $this->candidates()->update(['auto_elected' => $mode === self::MODE_AUTO]);
     }
 
     /**
@@ -122,7 +196,7 @@ class Election extends Model
      */
     public function ballotCandidates()
     {
-        $query = Candidate::query()->orderBy('display_order')->orderBy('name');
+        $query = $this->candidates();
 
         if ($this->isRunoff()) {
             $query->whereIn('id', $this->runoff_candidate_ids);
@@ -138,6 +212,8 @@ class Election extends Model
     {
         return $this->window_open
             && $this->qr_active
+            && ($this->active_slot === self::ACTIVE_SLOT_GLOBAL
+                || ! static::query()->where('active_slot', self::ACTIVE_SLOT_GLOBAL)->exists())
             && in_array($this->status, [self::STATUS_OPEN, self::STATUS_RUNOFF_OPEN], true);
     }
 
@@ -149,12 +225,37 @@ class Election extends Model
 
     public function canOpenMainVote(): bool
     {
+        if (! $this->isBoardVote()) {
+            return false;
+        }
+
         return $this->status === self::STATUS_READY
             && $this->mode !== null
             && (int) ($this->current_round ?? 1) === 1
             && $this->qr_active
-            && Candidate::query()->exists()
-            && Company::eligible()->exists();
+            && $this->candidates()->exists()
+            && $this->assembly->eligibleCompanies()->exists()
+            && (static::active()?->is($this) ?? true);
+    }
+
+    public function canOpenQuestionsVote(): bool
+    {
+        if (! $this->isQuestionsVote()) {
+            return false;
+        }
+
+        return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_READY], true)
+            && $this->qr_active
+            && $this->questions()->exists()
+            && $this->assembly->eligibleCompanies()->exists()
+            && (static::active()?->is($this) ?? true);
+    }
+
+    public function canOpen(): bool
+    {
+        return $this->isBoardVote()
+            ? $this->canOpenMainVote()
+            : $this->canOpenQuestionsVote();
     }
 
     public function canLaunchRunoff(): bool
@@ -184,11 +285,19 @@ class Election extends Model
     {
         return match ($this->status) {
             self::STATUS_READY => 'Prêt',
-            self::STATUS_OPEN => 'Vote principal ouvert',
+            self::STATUS_OPEN => 'Vote ouvert',
             self::STATUS_CLOSED => 'Clôturé',
             self::STATUS_RUNOFF_OPEN => 'Départage ouvert',
             self::STATUS_FINALIZED => 'Finalisé',
             default => 'Brouillon',
+        };
+    }
+
+    public function typeLabel(): string
+    {
+        return match ($this->type) {
+            self::TYPE_QUESTIONS => 'Questions Oui / Non / Abstention',
+            default => 'Élection du Conseil d’Administration',
         };
     }
 }

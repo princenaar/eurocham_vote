@@ -56,7 +56,17 @@
                                 :disabled="count >= required && !isChecked({{ $candidate->id }})"
                                 class="h-4 w-4 rounded border-slate-300 text-brand-700 focus:ring-brand-600 disabled:opacity-40"
                             >
-                            <span class="text-slate-800">{{ $candidate->name }}</span>
+                            @if ($candidate->photo_path)
+                                <img src="{{ $candidate->photoUrl() }}" alt="Photo de {{ $candidate->name }}" class="h-12 w-12 rounded object-cover">
+                            @else
+                                <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-slate-100 text-sm font-semibold text-slate-500">
+                                    {{ mb_substr($candidate->name, 0, 1) }}
+                                </span>
+                            @endif
+                            <span class="min-w-0">
+                                <span class="block font-medium text-slate-800">{{ $candidate->name }}</span>
+                                <span class="block text-xs text-slate-500">{{ $candidate->assemblyCompany?->name }}</span>
+                            </span>
                         </label>
                     </li>
                 @endforeach

@@ -6,6 +6,8 @@
     <div class="max-w-xl bg-white rounded-lg border border-slate-200 p-6">
         <form method="POST" action="{{ route('admin.companies.import.store') }}" enctype="multipart/form-data" class="space-y-4">
             @csrf
+            <input type="hidden" name="assembly_id" value="{{ $assembly->id }}">
+            <p class="text-sm text-slate-600">Import pour : <span class="font-medium text-slate-800">{{ $assembly->name }}</span></p>
             <div>
                 <label for="file" class="block text-sm font-medium text-slate-700 mb-1">Fichier Excel ou CSV</label>
                 <input id="file" name="file" type="file" accept=".xlsx,.xls,.csv,.txt" required
@@ -31,7 +33,7 @@
                 <button type="submit" class="rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
                     Importer
                 </button>
-                <a href="{{ route('admin.companies.index') }}" class="px-4 py-2 text-sm text-slate-600">Annuler</a>
+                <a href="{{ route('admin.companies.index', ['assembly' => $assembly->id]) }}" class="px-4 py-2 text-sm text-slate-600">Annuler</a>
             </div>
         </form>
     </div>

@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Candidate;
 use App\Models\Election;
+use App\Models\ElectionQuestion;
 use App\Models\Vote;
 use App\Models\VoteSelection;
 use Illuminate\Support\Collection;
@@ -33,6 +34,7 @@ class ElectionResults
     {
         $counts = VoteSelection::query()
             ->join('votes', 'votes.id', '=', 'vote_selections.vote_id')
+            ->where('votes.election_id', $this->election->id)
             ->where('votes.round', $round)
             ->groupBy('vote_selections.candidate_id')
             ->selectRaw('vote_selections.candidate_id as cid, COUNT(*) as total')
@@ -63,7 +65,7 @@ class ElectionResults
 
     public function votesCast(int $round = 1): int
     {
-        return Vote::round($round)->count();
+        return Vote::query()->forElection($this->election)->round($round)->count();
     }
 
     /**
@@ -76,7 +78,7 @@ class ElectionResults
     public function electedBoard(): Collection
     {
         if ($this->election->mode === Election::MODE_AUTO) {
-            return Candidate::query()->orderBy('display_order')->orderBy('name')->get();
+            return $this->election->candidates()->get();
         }
 
         if ($this->election->mode !== Election::MODE_SELECT) {
@@ -172,12 +174,79 @@ class ElectionResults
      */
     private function candidatesForRound(int $round): Collection
     {
-        $query = Candidate::query()->orderBy('display_order')->orderBy('name');
+        $query = $this->election->candidates();
 
         if ($round > 1 && ! empty($this->election->runoff_candidate_ids)) {
             $query->whereIn('id', $this->election->runoff_candidate_ids);
         }
 
         return $query->get();
+    }
+
+    /**
+     * Results for a Oui/Non/Abstention vote. Percentages are calculated on expressed
+     * Oui + Non only; abstention is reported separately and never wins.
+     *
+     * @return Collection<int, array{
+     *     question: ElectionQuestion,
+     *     yes: int,
+     *     no: int,
+     *     abstain: int,
+     *     total: int,
+     *     expressed: int,
+     *     yes_percent: float,
+     *     no_percent: float,
+     *     result: string
+     * }>
+     */
+    public function questionResults(): Collection
+    {
+        $questions = $this->election->questions()->get();
+
+        $counts = \App\Models\QuestionResponse::query()
+            ->join('votes', 'votes.id', '=', 'question_responses.vote_id')
+            ->where('votes.election_id', $this->election->id)
+            ->selectRaw('question_responses.election_question_id as qid')
+            ->selectRaw('SUM(CASE WHEN question_responses.answer = 1 THEN 1 ELSE 0 END) as yes_count')
+            ->selectRaw('SUM(CASE WHEN question_responses.answer = 0 THEN 1 ELSE 0 END) as no_count')
+            ->selectRaw('SUM(CASE WHEN question_responses.answer IS NULL THEN 1 ELSE 0 END) as abstain_count')
+            ->selectRaw('COUNT(*) as total_count')
+            ->groupBy('question_responses.election_question_id')
+            ->get()
+            ->keyBy('qid');
+
+        return $questions->map(function (ElectionQuestion $question) use ($counts) {
+            $row = $counts->get($question->id);
+            $yes = (int) ($row->yes_count ?? 0);
+            $no = (int) ($row->no_count ?? 0);
+            $abstain = (int) ($row->abstain_count ?? 0);
+            $total = (int) ($row->total_count ?? 0);
+            $expressed = $yes + $no;
+
+            return [
+                'question' => $question,
+                'yes' => $yes,
+                'no' => $no,
+                'abstain' => $abstain,
+                'total' => $total,
+                'expressed' => $expressed,
+                'yes_percent' => $expressed > 0 ? round($yes / $expressed * 100, 1) : 0.0,
+                'no_percent' => $expressed > 0 ? round($no / $expressed * 100, 1) : 0.0,
+                'result' => $this->questionWinner($yes, $no, $expressed),
+            ];
+        });
+    }
+
+    private function questionWinner(int $yes, int $no, int $expressed): string
+    {
+        if ($expressed === 0) {
+            return 'Aucun suffrage exprimé';
+        }
+
+        if ($yes === $no) {
+            return 'Égalité';
+        }
+
+        return $yes > $no ? 'Oui' : 'Non';
     }
 }

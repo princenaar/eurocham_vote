@@ -5,9 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * One cast ballot per member company. The UNIQUE constraint on company_id makes a
- * double vote impossible at the DB layer (CLAUDE.md rules 1 & 5). The per-candidate
- * choices live in vote_selections and are not exposed to third parties (rule 7).
+ * One cast ballot per member company per vote and round. Board choices live in
+ * vote_selections; question responses live in question_responses.
  */
 return new class extends Migration
 {
@@ -16,9 +15,10 @@ return new class extends Migration
         Schema::create('votes', function (Blueprint $table) {
             $table->id();
 
-            // The voting company — one vote each (rule 1). UNIQUE enforces anti-double-vote.
+            $table->foreignId('election_id')->constrained('elections')->cascadeOnDelete();
             $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
-            $table->unique('company_id');
+            $table->foreignId('assembly_company_id')->constrained('assembly_companies')->cascadeOnDelete();
+            $table->unsignedSmallInteger('round')->default(1);
 
             // Vote cast by proxy for the selected company when true.
             $table->boolean('is_proxy')->default(false);
@@ -30,6 +30,9 @@ return new class extends Migration
             $table->timestamp('voted_at');
 
             $table->timestamps();
+
+            $table->unique(['election_id', 'company_id', 'round']);
+            $table->index(['election_id', 'round']);
         });
     }
 

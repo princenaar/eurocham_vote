@@ -11,14 +11,14 @@
         </p>
 
         <form method="POST" action="{{ route('vote.identify') }}" class="mt-6 space-y-5"
-              x-data="companyPicker(@js(old('company_id')))">
+              x-data="companyPicker(@js(old('assembly_company_id', old('company_id'))))">
             @csrf
 
             {{-- Searchable company combobox. The server re-validates by id regardless of UI state. --}}
             <div x-id="['company-list']">
                 <label class="block text-sm font-medium text-slate-700">Entreprise membre</label>
                 <div class="relative mt-1">
-                    <input type="hidden" name="company_id" x-model="selectedId">
+                    <input type="hidden" name="assembly_company_id" x-model="selectedId">
                     <input
                         type="text"
                         x-model="query"

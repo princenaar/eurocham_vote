@@ -4,9 +4,21 @@
 
 @section('content')
     <div class="flex items-center justify-between mb-4">
-        <p class="text-sm text-slate-600">{{ $total }} entreprise(s) dans la liste.</p>
-        @if (\App\Models\Election::current()->canEditConfiguration())
-            <a href="{{ route('admin.companies.import') }}"
+        <div>
+            <p class="text-sm text-slate-600">{{ $total }} entreprise(s) dans la liste de {{ $assembly->name }}.</p>
+            @if ($assemblies->count() > 1)
+                <select onchange="window.location = this.value"
+                        class="mt-2 rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-600 focus:ring-brand-600">
+                    @foreach ($assemblies as $option)
+                        <option value="{{ route('admin.companies.index', ['assembly' => $option->id]) }}" @selected($option->id === $assembly->id)>
+                            {{ $option->name }}
+                        </option>
+                    @endforeach
+                </select>
+            @endif
+        </div>
+        @if ($assembly->canEditCompanies())
+            <a href="{{ route('admin.companies.import', ['assembly' => $assembly->id]) }}"
                class="rounded-md bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
                 Importer une liste (Excel/CSV)
             </a>
@@ -36,7 +48,7 @@
                         <td class="px-4 py-2">{{ $company->dues_2025 ? '✓' : '—' }}</td>
                         <td class="px-4 py-2">{{ $company->new_member_2026 ? '✓' : '—' }}</td>
                         <td class="px-4 py-2">
-                            @if ($company->isEligible())
+                            @if ($company->eligible)
                                 <span class="text-emerald-600 font-medium">Oui</span>
                             @else
                                 <span class="text-red-600">Non</span>
@@ -52,5 +64,5 @@
         </table>
     </div>
 
-    <div class="mt-4">{{ $companies->links() }}</div>
+    <div class="mt-4">{{ $companies->appends(['assembly' => $assembly->id])->links() }}</div>
 @endsection

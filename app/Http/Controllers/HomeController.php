@@ -15,7 +15,9 @@ class HomeController extends Controller
 {
     public function index(): View
     {
-        $election = Election::current();
+        $election = Election::active()
+            ?? Election::query()->where('status', Election::STATUS_CLOSED)->latest('closed_at')->first()
+            ?? Election::current();
 
         // State-aware CTA. Mirrors the gates used by VoteController / ResultsController.
         if ($election->isVotingOpen()) {

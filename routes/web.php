@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\AssemblyController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ElectionController;
+use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\ResultController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ResultsController;
@@ -44,6 +46,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
+        Route::get('assemblies', [AssemblyController::class, 'index'])->name('assemblies.index');
+        Route::post('assemblies', [AssemblyController::class, 'store'])->name('assemblies.store');
+        Route::post('assemblies/{assembly}/votes', [AssemblyController::class, 'storeVote'])->name('assemblies.votes.store');
+
         Route::resource('candidates', CandidateController::class)
             ->except(['show'])->parameters(['candidates' => 'candidate']);
 
@@ -58,6 +64,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('election/runoff', [ElectionController::class, 'launchRunoff'])->name('election.runoff');
         Route::get('election/qr/fullscreen', [ElectionController::class, 'qrFullscreen'])->name('election.qr.fullscreen');
         Route::get('election/qr.svg', [ElectionController::class, 'qr'])->name('election.qr');
+
+        Route::post('elections/{election}/questions', [QuestionController::class, 'store'])->name('elections.questions.store');
+        Route::delete('elections/{election}/questions/{question}', [QuestionController::class, 'destroy'])->name('elections.questions.destroy');
 
         Route::get('results', [ResultController::class, 'index'])->name('results.index');
         Route::get('results/export/excel', [ResultController::class, 'exportExcel'])->name('results.excel');

@@ -2,6 +2,8 @@
 
 namespace App\Imports;
 
+use App\Models\Assembly;
+use App\Models\AssemblyCompany;
 use App\Models\Company;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -28,6 +30,13 @@ class CompaniesImport implements ToCollection, WithHeadingRow
     /** @var array<int, string> */
     public array $errors = [];
 
+    private Assembly $assembly;
+
+    public function __construct(?Assembly $assembly = null)
+    {
+        $this->assembly = $assembly ?? Assembly::current();
+    }
+
     public function collection(Collection $rows): void
     {
         foreach ($rows as $index => $row) {
@@ -39,13 +48,28 @@ class CompaniesImport implements ToCollection, WithHeadingRow
                 continue;
             }
 
-            Company::updateOrCreate(
+            $company = Company::updateOrCreate(
                 ['normalized_name' => Company::normalizeName($name)],
                 [
                     'name' => trim($name),
                     'survey_2025' => $this->bool($this->pick($row, self::SURVEY_KEYS)),
                     'dues_2025' => $this->bool($this->pick($row, self::DUES_KEYS)),
                     'new_member_2026' => $this->bool($this->pick($row, self::NEW_MEMBER_KEYS)),
+                ],
+            );
+
+            AssemblyCompany::updateOrCreate(
+                [
+                    'assembly_id' => $this->assembly->id,
+                    'company_id' => $company->id,
+                ],
+                [
+                    'name' => $company->name,
+                    'normalized_name' => $company->normalized_name,
+                    'survey_2025' => $company->survey_2025,
+                    'dues_2025' => $company->dues_2025,
+                    'new_member_2026' => $company->new_member_2026,
+                    'eligible' => $company->isEligible(),
                 ],
             );
 

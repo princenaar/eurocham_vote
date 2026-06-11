@@ -25,7 +25,17 @@
                         <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-800">
                             {{ $loop->iteration }}
                         </span>
-                        <span class="text-slate-800">{{ $candidate->name }}</span>
+                        @if ($candidate->photo_path)
+                            <img src="{{ $candidate->photoUrl() }}" alt="Photo de {{ $candidate->name }}" class="h-10 w-10 rounded object-cover">
+                        @else
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-slate-100 text-xs font-semibold text-slate-500">
+                                {{ mb_substr($candidate->name, 0, 1) }}
+                            </span>
+                        @endif
+                        <span class="min-w-0">
+                            <span class="block font-medium text-slate-800">{{ $candidate->name }}</span>
+                            <span class="block text-xs text-slate-500">{{ $candidate->assemblyCompany?->name }}</span>
+                        </span>
                     </li>
                 @endforeach
             </ul>

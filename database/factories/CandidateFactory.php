@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Candidate;
+use App\Models\Election;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -15,6 +16,8 @@ class CandidateFactory extends Factory
     public function definition(): array
     {
         return [
+            'election_id' => Election::current()->id,
+            'assembly_company_id' => fn () => Election::current()->assembly->eligibleCompanies()->value('id'),
             'name' => fake()->unique()->name(),
             'display_order' => fake()->numberBetween(1, 200),
             'auto_elected' => false,

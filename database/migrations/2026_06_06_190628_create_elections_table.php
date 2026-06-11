@@ -5,8 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Single configurable scrutin that gates the voter flow (CLAUDE.md rules 4 & 6).
- * One row is expected; the admin toggles the QR code and the voting window here.
+ * A vote/scrutin inside an AG. Type "board" preserves the CA election flow;
+ * type "questions" stores a grouped Oui/Non/Abstention vote.
  */
 return new class extends Migration
 {
@@ -14,20 +14,30 @@ return new class extends Migration
     {
         Schema::create('elections', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->default('Assemblée Générale EUROCHAM 2026');
+            $table->foreignId('assembly_id')->constrained('assemblies')->cascadeOnDelete();
+            $table->string('name');
+            $table->string('type')->default('board');
+            $table->unsignedSmallInteger('display_order')->default(0);
 
-            // Scrutin mode, resolved from candidate count. Null until candidates exist.
+            $table->string('status')->default('draft');
             $table->enum('mode', ['A', 'B'])->nullable();
-            // Threshold that separates Mode A from Mode B (rule 4: 20 seats).
             $table->unsignedSmallInteger('candidate_threshold')->default(20);
+            $table->unsignedSmallInteger('current_round')->default(1);
+            $table->json('runoff_candidate_ids')->nullable();
+            $table->unsignedSmallInteger('runoff_seats')->nullable();
 
-            // Voting window + QR gate, toggled remotely by the admin (rule 6).
             $table->boolean('window_open')->default(false);
             $table->boolean('qr_active')->default(false);
+            // Nullable unique slot: MySQL allows many NULL values, but only one "global".
+            $table->string('active_slot')->nullable()->unique();
             $table->timestamp('opened_at')->nullable();
             $table->timestamp('closed_at')->nullable();
 
             $table->timestamps();
+
+            $table->index(['assembly_id', 'type']);
+            $table->index(['status', 'window_open']);
+            $table->index('display_order');
         });
     }
 

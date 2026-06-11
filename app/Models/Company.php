@@ -32,6 +32,25 @@ class Company extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::created(function (Company $company) {
+            $assembly = Assembly::current();
+
+            AssemblyCompany::firstOrCreate(
+                ['assembly_id' => $assembly->id, 'company_id' => $company->id],
+                [
+                    'name' => $company->name,
+                    'normalized_name' => $company->normalized_name,
+                    'survey_2025' => (bool) ($company->survey_2025 ?? false),
+                    'dues_2025' => (bool) ($company->dues_2025 ?? false),
+                    'new_member_2026' => (bool) ($company->new_member_2026 ?? false),
+                    'eligible' => $company->isEligible(),
+                ],
+            );
+        });
+    }
+
     /**
      * Eligible if up to date on both the 2025 survey and 2025 dues, OR — for
      * new members — entry fees + 2026 dues (new_member_2026).
@@ -63,14 +82,23 @@ class Company extends Model
         return $this->hasMany(Vote::class);
     }
 
+    public function assemblyCompanies(): HasMany
+    {
+        return $this->hasMany(AssemblyCompany::class);
+    }
+
     /**
      * Whether this company has already voted in the given round (one vote each per
      * round — rule 1). Defaults to the election's current round.
      */
-    public function hasVoted(?int $round = null): bool
+    public function hasVoted(?Election $election = null, ?int $round = null): bool
     {
-        $round ??= Election::current()->current_round;
+        $election ??= Election::active() ?? Election::current();
+        $round ??= $election->current_round;
 
-        return $this->votes()->where('round', $round)->exists();
+        return $this->votes()
+            ->where('election_id', $election->id)
+            ->where('round', $round)
+            ->exists();
     }
 }

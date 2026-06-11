@@ -10,6 +10,9 @@ class CandidateSeeder extends Seeder
 {
     public function run(): void
     {
+        $election = Election::current();
+        $structures = $election->assembly->eligibleCompanies()->orderBy('name')->get()->values();
+
         $names = [
             'Amadou Ba',
             'Awa Diop',
@@ -40,14 +43,17 @@ class CandidateSeeder extends Seeder
 
         foreach ($names as $index => $name) {
             Candidate::query()->updateOrCreate(
-                ['name' => $name],
+                ['election_id' => $election->id, 'name' => $name],
                 [
+                    'assembly_company_id' => $structures->isNotEmpty()
+                        ? $structures[$index % $structures->count()]->id
+                        : null,
                     'display_order' => $index + 1,
                     'auto_elected' => false,
                 ],
             );
         }
 
-        Election::current()->syncModeFromCandidates();
+        $election->syncModeFromCandidates();
     }
 }
