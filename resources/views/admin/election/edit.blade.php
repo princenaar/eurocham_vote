@@ -5,7 +5,7 @@
 @section('content')
     <div class="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
         AG : <span class="font-semibold text-brand-800">{{ $assembly->name }}</span>.
-        Vote : <span class="font-semibold text-brand-800">{{ $election->name }}</span>
+        Vote : <span class="font-semibold text-brand-800" data-testid="admin-current-election">{{ $election->name }}</span>
         ({{ $election->typeLabel() }}).
         <br>
         État :
@@ -18,7 +18,7 @@
     @if ($elections->count() > 1)
         <div class="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-3">
             <label class="block text-sm font-medium text-slate-700">Changer de vote</label>
-            <select onchange="window.location = this.value"
+            <select onchange="window.location = this.value" data-testid="admin-election-switcher"
                     class="mt-1 rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-600 focus:ring-brand-600">
                 @foreach ($elections as $option)
                     <option value="{{ route('admin.election.edit', ['election' => $option->id]) }}" @selected($option->id === $election->id)>
@@ -53,10 +53,10 @@
                             {{ $election->window_open ? 'Ouverte' : 'Fermée' }}
                         </div>
                     </div>
-                    <form method="POST" action="{{ route('admin.election.window') }}">
+                    <form method="POST" action="{{ route('admin.election.window') }}" data-testid="admin-window-form">
                         @csrf
                         <input type="hidden" name="election_id" value="{{ $election->id }}">
-                        <button type="submit"
+                        <button type="submit" data-testid="admin-window-toggle"
                                 @disabled(! $election->window_open && ! $election->canOpen())
                                 class="rounded-md px-3 py-2 text-sm font-medium text-white {{ $election->window_open ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700' }}">
                             {{ $election->window_open ? 'Clôturer le vote' : 'Ouvrir le vote' }}
@@ -71,10 +71,10 @@
                             {{ $election->qr_active ? 'Actif' : 'Inactif' }}
                         </div>
                     </div>
-                    <form method="POST" action="{{ route('admin.election.qr.toggle') }}">
+                    <form method="POST" action="{{ route('admin.election.qr.toggle') }}" data-testid="admin-qr-form">
                         @csrf
                         <input type="hidden" name="election_id" value="{{ $election->id }}">
-                        <button type="submit"
+                        <button type="submit" data-testid="admin-qr-toggle"
                                 class="rounded-md px-3 py-2 text-sm font-medium {{ $election->qr_active ? 'bg-slate-200 text-slate-800 hover:bg-slate-300' : 'bg-brand-800 text-white hover:bg-brand-700' }}">
                             {{ $election->qr_active ? 'Désactiver le QR' : 'Activer le QR' }}
                         </button>

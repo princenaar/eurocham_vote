@@ -21,9 +21,12 @@ class CompaniesImport implements ToCollection, WithHeadingRow
 {
     /** Header aliases (normalized) → canonical field. */
     private const NAME_KEYS = ['nom', 'entreprise', 'societe', 'société', 'raison_sociale', 'membre', 'membres'];
-    private const SURVEY_KEYS = ['enquete_2025', 'enquête_2025', 'enquete', 'survey_2025'];
-    private const DUES_KEYS = ['cotisation_2025', 'cotisations_2025', 'cotisation', 'dues_2025'];
-    private const NEW_MEMBER_KEYS = ['nouveau_membre_2026', 'nouveau_membre', 'new_member_2026'];
+
+    private const SURVEY_KEYS = ['enquete_2025', 'enquête_2025', 'enquetes_recues_2025', 'enquêtes_reçues_2025', 'enquete', 'survey_2025'];
+
+    private const DUES_KEYS = ['cotisation_2025', 'cotisations_2025', 'cotisations_adhesions_recues_2025', 'cotisations_adhésions_reçues_2025', 'cotisation', 'dues_2025'];
+
+    private const NEW_MEMBER_KEYS = ['nouveau_membre_2026', 'nouveau_membre', 'nouvelle_adhesion', 'nouvelle_adhésion', 'new_member_2026'];
 
     public int $imported = 0;
 
@@ -45,6 +48,7 @@ class CompaniesImport implements ToCollection, WithHeadingRow
 
             if ($name === null || trim($name) === '') {
                 $this->errors[] = "Ligne {$line} : nom d’entreprise manquant — ignorée.";
+
                 continue;
             }
 

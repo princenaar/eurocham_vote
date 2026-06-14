@@ -3,7 +3,7 @@
 @section('title', 'Bulletin de vote — EUROCHAM AG 2026')
 
 @section('content')
-    <div class="max-w-2xl mx-auto py-8" x-data="ballot({{ $required }})">
+    <div class="max-w-2xl mx-auto py-8" x-data="ballot({{ $required }})" data-testid="board-ballot">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <h2 class="font-serif text-3xl font-semibold text-brand-800">Bulletin de vote</h2>
@@ -32,7 +32,7 @@
         </div>
 
         {{-- Sticky live counter (UX only — the server re-checks the exact count). --}}
-        <div class="sticky top-0 z-10 mt-4 flex items-center justify-between rounded-md border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <div class="sticky top-0 z-10 mt-4 flex items-center justify-between rounded-md border border-slate-200 bg-white px-4 py-3 shadow-sm" data-testid="selection-counter">
             <span class="text-sm text-slate-600">Sélectionnés</span>
             <span class="font-mono text-sm font-semibold"
                   :class="count === required ? 'text-brand-700' : 'text-slate-900'">
@@ -55,9 +55,10 @@
                                 @change="toggle($event)"
                                 :disabled="count >= required && !isChecked({{ $candidate->id }})"
                                 class="h-4 w-4 rounded border-slate-300 text-brand-700 focus:ring-brand-600 disabled:opacity-40"
+                                data-testid="candidate-checkbox"
                             >
                             @if ($candidate->photo_path)
-                                <img src="{{ $candidate->photoUrl() }}" alt="Photo de {{ $candidate->name }}" class="h-12 w-12 rounded object-cover">
+                                <img src="{{ $candidate->photoUrl() }}" alt="Photo de {{ $candidate->name }}" class="h-12 w-12 rounded object-cover" data-testid="candidate-avatar">
                             @else
                                 <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-slate-100 text-sm font-semibold text-slate-500">
                                     {{ mb_substr($candidate->name, 0, 1) }}
@@ -74,6 +75,7 @@
 
             <button
                 type="submit"
+                data-testid="board-review-submit"
                 :disabled="count !== required"
                 class="mt-6 w-full rounded-md bg-brand-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300"
             >

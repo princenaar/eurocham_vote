@@ -7,10 +7,9 @@ use App\Models\Company;
  * Eligible-company import (CLAUDE.md rule 2): flexible headers, eligibility flags,
  * upsert by normalized name, and an error report for invalid rows.
  */
-
 function importRows(array $rows): CompaniesImport
 {
-    $import = new CompaniesImport();
+    $import = new CompaniesImport;
     $import->collection(collect($rows)->map(fn ($r) => collect($r)));
 
     return $import;
@@ -47,6 +46,21 @@ it('accepts membres as a company-name header alias', function () {
 
     expect(Company::count())->toBe(1);
     expect(Company::first()->name)->toBe('2S CONSULTING');
+    expect(Company::first()->isEligible())->toBeTrue();
+});
+
+it('accepts the AG 2026 source spreadsheet headers', function () {
+    importRows([
+        [
+            'membres' => 'AG 2026 SAS',
+            'enquetes_recues_2025' => 'Oui',
+            'cotisations_adhesions_recues_2025' => 'Oui',
+            'nouvelle_adhesion' => null,
+        ],
+    ]);
+
+    expect(Company::count())->toBe(1);
+    expect(Company::first()->name)->toBe('AG 2026 SAS');
     expect(Company::first()->isEligible())->toBeTrue();
 });
 

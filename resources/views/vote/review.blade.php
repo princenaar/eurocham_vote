@@ -3,7 +3,7 @@
 @section('title', 'Vérification — EUROCHAM AG 2026')
 
 @section('content')
-    <div class="max-w-2xl mx-auto py-8">
+    <div class="max-w-2xl mx-auto py-8" data-testid="board-review">
         <h2 class="font-serif text-3xl font-semibold text-brand-800">Vérifiez votre vote</h2>
         <p class="mt-2 text-slate-600">
             Vérifiez vos choix ci-dessous. Après validation, votre vote sera
@@ -24,12 +24,12 @@
                 </div>
                 <ul class="mt-2 divide-y divide-slate-100">
                     @foreach ($candidates as $candidate)
-                        <li class="flex items-center gap-3 py-2">
+                        <li class="flex items-center gap-3 py-2" data-testid="selected-candidate">
                             <svg class="h-4 w-4 shrink-0 text-brand-700" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                             </svg>
                             @if ($candidate->photo_path)
-                                <img src="{{ $candidate->photoUrl() }}" alt="Photo de {{ $candidate->name }}" class="h-10 w-10 rounded object-cover">
+                                <img src="{{ $candidate->photoUrl() }}" alt="Photo de {{ $candidate->name }}" class="h-10 w-10 rounded object-cover" data-testid="candidate-avatar">
                             @else
                                 <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-slate-100 text-xs font-semibold text-slate-500">
                                     {{ mb_substr($candidate->name, 0, 1) }}
@@ -52,7 +52,7 @@
                 @foreach ($chosen as $candidateId)
                     <input type="hidden" name="candidates[]" value="{{ $candidateId }}">
                 @endforeach
-                <button type="submit"
+                <button type="submit" data-testid="confirm-vote-submit"
                         class="w-full rounded-md bg-brand-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2 disabled:bg-slate-400">
                     Confirmer définitivement mon vote
                 </button>

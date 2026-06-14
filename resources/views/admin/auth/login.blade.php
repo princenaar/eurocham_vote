@@ -24,23 +24,23 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('admin.login.attempt') }}" class="space-y-4">
+                <form method="POST" action="{{ route('admin.login.attempt') }}" class="space-y-4" data-testid="admin-login-form">
                     @csrf
                     <div>
                         <label for="email" class="block text-sm font-medium text-slate-700 mb-1">Adresse e-mail</label>
-                        <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus
+                        <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus data-testid="admin-email"
                                class="w-full rounded-md border-slate-300 shadow-sm text-sm focus:border-brand-600 focus:ring-brand-600">
                     </div>
                     <div>
                         <label for="password" class="block text-sm font-medium text-slate-700 mb-1">Mot de passe</label>
-                        <input id="password" name="password" type="password" required
+                        <input id="password" name="password" type="password" required data-testid="admin-password"
                                class="w-full rounded-md border-slate-300 shadow-sm text-sm focus:border-brand-600 focus:ring-brand-600">
                     </div>
                     <label class="flex items-center gap-2 text-sm text-slate-600">
                         <input type="checkbox" name="remember" class="rounded border-slate-300 text-brand-700 focus:ring-brand-600">
                         Se souvenir de moi
                     </label>
-                    <button type="submit"
+                    <button type="submit" data-testid="admin-login-submit"
                             class="w-full rounded-md bg-brand-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
                         Se connecter
                     </button>

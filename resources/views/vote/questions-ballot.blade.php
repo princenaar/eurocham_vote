@@ -3,7 +3,7 @@
 @section('title', 'Bulletin de vote — EUROCHAM AG 2026')
 
 @section('content')
-    <div class="max-w-3xl mx-auto py-8">
+    <div class="max-w-3xl mx-auto py-8" data-testid="questions-ballot">
         <div>
             <h2 class="font-serif text-3xl font-semibold text-brand-800">{{ $election->name }}</h2>
             <p class="mt-1 text-sm text-slate-600">
@@ -21,7 +21,7 @@
         <form method="POST" action="{{ route('vote.review') }}" class="mt-6 space-y-4">
             @csrf
             @foreach ($questions as $question)
-                <fieldset class="rounded-lg border border-slate-200 bg-white p-5">
+                <fieldset class="rounded-lg border border-slate-200 bg-white p-5" data-testid="question-fieldset">
                     <legend class="font-serif text-lg font-semibold text-brand-800">{{ $question->title }}</legend>
                     @if ($question->description)
                         <p class="mt-2 text-sm text-slate-600">{{ $question->description }}</p>
@@ -29,7 +29,7 @@
                     <div class="mt-4 grid gap-3 sm:grid-cols-3">
                         @foreach (['yes' => 'Oui', 'no' => 'Non', 'abstain' => 'Abstention'] as $value => $label)
                             <label class="flex cursor-pointer items-center gap-3 rounded-md border border-slate-200 px-4 py-3 text-sm hover:bg-brand-50">
-                                <input type="radio" name="answers[{{ $question->id }}]" value="{{ $value }}" required
+                                <input type="radio" name="answers[{{ $question->id }}]" value="{{ $value }}" required data-testid="question-answer-{{ $value }}"
                                        class="h-4 w-4 border-slate-300 text-brand-700 focus:ring-brand-600">
                                 <span class="font-medium text-slate-800">{{ $label }}</span>
                             </label>
@@ -39,7 +39,7 @@
                 </fieldset>
             @endforeach
 
-            <button type="submit"
+            <button type="submit" data-testid="questions-review-submit"
                     class="w-full rounded-md bg-brand-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2">
                 Vérifier mon vote
             </button>

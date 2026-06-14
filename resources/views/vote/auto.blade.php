@@ -3,7 +3,7 @@
 @section('title', 'Résultat — Élection automatique')
 
 @section('content')
-    <div class="max-w-2xl mx-auto py-8">
+    <div class="max-w-2xl mx-auto py-8" data-testid="board-auto">
         <div class="rounded-lg border border-brand-100 bg-brand-50 px-5 py-4 text-brand-800">
             <h2 class="font-serif text-xl font-semibold">Élection automatique</h2>
             <p class="mt-1 text-sm">
@@ -26,7 +26,7 @@
                             {{ $loop->iteration }}
                         </span>
                         @if ($candidate->photo_path)
-                            <img src="{{ $candidate->photoUrl() }}" alt="Photo de {{ $candidate->name }}" class="h-10 w-10 rounded object-cover">
+                            <img src="{{ $candidate->photoUrl() }}" alt="Photo de {{ $candidate->name }}" class="h-10 w-10 rounded object-cover" data-testid="candidate-avatar">
                         @else
                             <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-slate-100 text-xs font-semibold text-slate-500">
                                 {{ mb_substr($candidate->name, 0, 1) }}

@@ -3,7 +3,7 @@
 @section('title', 'Résultats — EUROCHAM AG 2026')
 
 @section('content')
-    <div class="max-w-3xl mx-auto py-8">
+    <div class="max-w-3xl mx-auto py-8" data-testid="board-results">
         <div class="text-center">
             <h2 class="font-serif text-4xl font-semibold tracking-tight text-brand-800">Résultats du scrutin</h2>
             <p class="mt-2 text-slate-600">
@@ -38,12 +38,12 @@
             </div>
             <ul class="divide-y divide-slate-100">
                 @forelse ($electedBoard as $candidate)
-                    <li class="flex items-center gap-3 px-5 py-3">
+                    <li class="flex items-center gap-3 px-5 py-3" data-testid="elected-candidate">
                         <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-800 text-xs font-semibold text-gold-300">
                             {{ $loop->iteration }}
                         </span>
                         @if ($candidate->photo_path)
-                            <img src="{{ $candidate->photoUrl() }}" alt="Photo de {{ $candidate->name }}" class="h-10 w-10 rounded object-cover">
+                            <img src="{{ $candidate->photoUrl() }}" alt="Photo de {{ $candidate->name }}" class="h-10 w-10 rounded object-cover" data-testid="candidate-avatar">
                         @else
                             <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-slate-100 text-xs font-semibold text-slate-500">
                                 {{ mb_substr($candidate->name, 0, 1) }}

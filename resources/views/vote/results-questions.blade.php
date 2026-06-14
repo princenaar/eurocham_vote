@@ -3,7 +3,7 @@
 @section('title', 'Résultats — EUROCHAM AG 2026')
 
 @section('content')
-    <div class="max-w-4xl mx-auto py-8">
+    <div class="max-w-4xl mx-auto py-8" data-testid="questions-results">
         <div class="text-center">
             <h2 class="font-serif text-4xl font-semibold tracking-tight text-brand-800">Résultats du vote</h2>
             <p class="mt-2 text-slate-600">{{ $election->name }} · {{ $votesCast }} bulletin(s)</p>
@@ -11,7 +11,7 @@
 
         <div class="mt-6 space-y-4">
             @foreach ($questionResults as $row)
-                <div class="rounded-lg border border-slate-200 bg-white p-5">
+                <div class="rounded-lg border border-slate-200 bg-white p-5" data-testid="question-result">
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <h3 class="font-serif text-lg font-semibold text-brand-800">{{ $row['question']->title }}</h3>
