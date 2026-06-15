@@ -112,23 +112,26 @@
         </table>
     @endif
 
-    @if ($isRunoff && $runoffRanking)
-        <h1 style="font-size:14px; margin-top:20px; color:#16386f;">Vote de départage (tour {{ $election->current_round }})</h1>
-        <table>
-            <thead>
-                <tr><th>Rang</th><th>Candidat</th><th>Structure</th><th>Voix</th></tr>
-            </thead>
-            <tbody>
-                @foreach ($runoffRanking as $row)
-                    <tr>
-                        <td>{{ $row['rank'] }}</td>
-                        <td>{{ $row['candidate']->name }}</td>
-                        <td>{{ $row['candidate']->assemblyCompany?->name }}</td>
-                        <td class="num">{{ $row['votes'] }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+    @if ($runoffRounds->isNotEmpty())
+        @foreach ($runoffRounds as $runoffRound)
+            <h1 style="font-size:14px; margin-top:20px; color:#16386f;">Vote de départage (tour {{ $runoffRound['round'] }})</h1>
+            <p class="muted">{{ $runoffRound['votes_cast'] }} vote(s) · {{ $runoffRound['seats'] }} siège(s).</p>
+            <table>
+                <thead>
+                    <tr><th>Rang</th><th>Candidat</th><th>Structure</th><th>Voix</th></tr>
+                </thead>
+                <tbody>
+                    @foreach ($runoffRound['ranking'] as $row)
+                        <tr>
+                            <td>{{ $row['rank'] }}</td>
+                            <td>{{ $row['candidate']->name }}</td>
+                            <td>{{ $row['candidate']->assemblyCompany?->name }}</td>
+                            <td class="num">{{ $row['votes'] }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endforeach
     @endif
 </body>
 </html>

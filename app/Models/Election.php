@@ -126,6 +126,11 @@ class Election extends Model
         return $this->hasMany(Vote::class);
     }
 
+    public function runoffRounds(): HasMany
+    {
+        return $this->hasMany(ElectionRunoffRound::class)->orderBy('round');
+    }
+
     public function isBoardVote(): bool
     {
         return $this->type === self::TYPE_BOARD;

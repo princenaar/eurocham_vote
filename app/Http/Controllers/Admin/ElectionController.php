@@ -10,6 +10,7 @@ use App\Support\ElectionResults;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -156,26 +157,36 @@ class ElectionController extends Controller
         }
 
         $tiedIds = $tie['tied']->pluck('id')->all();
+        $nextRound = (int) $election->current_round + 1;
 
-        $election->update([
-            'current_round' => $election->current_round + 1,
-            'runoff_candidate_ids' => $tiedIds,
-            'runoff_seats' => $tie['seats'],
-            'status' => Election::STATUS_RUNOFF_OPEN,
-            'window_open' => true,
-            'qr_active' => true,
-            'active_slot' => Election::ACTIVE_SLOT_GLOBAL,
-            'opened_at' => now(),
-        ]);
+        DB::transaction(function () use ($election, $nextRound, $tiedIds, $tie) {
+            $election->update([
+                'current_round' => $nextRound,
+                'runoff_candidate_ids' => $tiedIds,
+                'runoff_seats' => $tie['seats'],
+                'status' => Election::STATUS_RUNOFF_OPEN,
+                'window_open' => true,
+                'qr_active' => true,
+                'active_slot' => Election::ACTIVE_SLOT_GLOBAL,
+                'opened_at' => now(),
+            ]);
+
+            $election->runoffRounds()->create([
+                'round' => $nextRound,
+                'candidate_ids' => $tiedIds,
+                'seats' => $tie['seats'],
+            ]);
+        });
 
         AuditLogger::log('election.runoff_launched', 'Vote de départage lancé', [
-            'round' => $election->current_round,
+            'election_id' => $election->id,
+            'round' => $nextRound,
             'seats' => $tie['seats'],
             'candidate_ids' => $tiedIds,
         ]);
 
         return redirect()->route('admin.election.edit', $election->is(Election::current()) ? [] : ['election' => $election->id])
-            ->with('status', "Vote de départage lancé (tour {$election->current_round}).");
+            ->with('status', "Vote de départage lancé (tour {$nextRound}).");
     }
 
     /**

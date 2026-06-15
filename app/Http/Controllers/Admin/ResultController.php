@@ -61,7 +61,7 @@ class ResultController extends Controller
             'hasUnresolvedTie' => $results->hasUnresolvedTie(),
             'pendingTie' => $results->pendingTie(),
             'isRunoff' => $election->isRunoff(),
-            'runoffRanking' => $election->isRunoff() ? $results->ranking($election->current_round) : null,
+            'runoffRounds' => $election->isBoardVote() ? $results->runoffRounds() : collect(),
             'votesCast' => $results->votesCast(1),
             'questionResults' => $election->isQuestionsVote() ? $results->questionResults() : null,
             'generatedAt' => now(),

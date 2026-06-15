@@ -127,31 +127,36 @@
         </div>
     @endif
 
-    @if ($isRunoff && $runoffRanking)
-        <h3 class="mt-8 mb-3 font-serif text-base font-semibold text-brand-800">
-            Vote de départage — tour {{ $election->current_round }}
-        </h3>
-        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
-            <table class="w-full text-sm">
-                <thead class="bg-slate-50 text-left text-slate-500">
-                    <tr>
-                        <th class="px-4 py-2 font-medium">Rang</th>
-                        <th class="px-4 py-2 font-medium">Candidat</th>
-                        <th class="px-4 py-2 font-medium">Structure</th>
-                        <th class="px-4 py-2 font-medium text-right">Voix</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @foreach ($runoffRanking as $row)
+    @if ($runoffRounds->isNotEmpty())
+        @foreach ($runoffRounds as $runoffRound)
+            <h3 class="mt-8 mb-3 font-serif text-base font-semibold text-brand-800">
+                Vote de départage — tour {{ $runoffRound['round'] }}
+                <span class="font-sans text-sm font-normal text-slate-500">
+                    · {{ $runoffRound['votes_cast'] }} vote(s) · {{ $runoffRound['seats'] }} siège(s)
+                </span>
+            </h3>
+            <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 text-left text-slate-500">
                         <tr>
-                            <td class="px-4 py-2 text-slate-500">{{ $row['rank'] }}</td>
-                            <td class="px-4 py-2 font-medium text-slate-900">{{ $row['candidate']->name }}</td>
-                            <td class="px-4 py-2 text-slate-600">{{ $row['candidate']->assemblyCompany?->name }}</td>
-                            <td class="px-4 py-2 text-right font-semibold">{{ $row['votes'] }}</td>
+                            <th class="px-4 py-2 font-medium">Rang</th>
+                            <th class="px-4 py-2 font-medium">Candidat</th>
+                            <th class="px-4 py-2 font-medium">Structure</th>
+                            <th class="px-4 py-2 font-medium text-right">Voix</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach ($runoffRound['ranking'] as $row)
+                            <tr>
+                                <td class="px-4 py-2 text-slate-500">{{ $row['rank'] }}</td>
+                                <td class="px-4 py-2 font-medium text-slate-900">{{ $row['candidate']->name }}</td>
+                                <td class="px-4 py-2 text-slate-600">{{ $row['candidate']->assemblyCompany?->name }}</td>
+                                <td class="px-4 py-2 text-right font-semibold">{{ $row['votes'] }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endforeach
     @endif
 @endsection

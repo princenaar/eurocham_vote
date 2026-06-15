@@ -129,6 +129,119 @@ it('resolves the board from a runoff round', function () {
         ->toBe(collect([$a->id, $b->id])->sort()->values()->all());
 });
 
+it('keeps partial winners from successive runoff rounds until the board is complete', function () {
+    $election = Election::current();
+    $election->update([
+        'candidate_threshold' => 3,
+        'candidate_min_choices' => 1,
+        'candidate_max_choices' => 3,
+        'mode' => Election::MODE_SELECT,
+    ]);
+    $alpha = Candidate::create(['name' => 'Alpha']);
+    $bravo = Candidate::create(['name' => 'Bravo']);
+    $charlie = Candidate::create(['name' => 'Charlie']);
+    $delta = Candidate::create(['name' => 'Delta']);
+    $echo = Candidate::create(['name' => 'Echo']);
+    [$c1, $c2, $c3] = makeCompanies(3);
+
+    // Main vote: Alpha is clear; four candidates are tied for the final two seats.
+    castBallot($c1, [$alpha->id, $bravo->id, $charlie->id]);
+    castBallot($c2, [$alpha->id, $delta->id, $echo->id]);
+
+    // Round 2: Bravo wins one seat, Charlie/Delta/Echo remain tied for one seat.
+    $election->update([
+        'current_round' => 2,
+        'runoff_candidate_ids' => [$bravo->id, $charlie->id, $delta->id, $echo->id],
+        'runoff_seats' => 2,
+    ]);
+    $election->runoffRounds()->create([
+        'round' => 2,
+        'candidate_ids' => [$bravo->id, $charlie->id, $delta->id, $echo->id],
+        'seats' => 2,
+    ]);
+    castBallot($c1, [$bravo->id, $charlie->id], round: 2);
+    castBallot($c2, [$bravo->id, $delta->id], round: 2);
+    castBallot($c3, [$bravo->id, $echo->id], round: 2);
+
+    // Round 3 resolves the last remaining seat without erasing Bravo's round-2 win.
+    $election->update([
+        'current_round' => 3,
+        'runoff_candidate_ids' => [$charlie->id, $delta->id, $echo->id],
+        'runoff_seats' => 1,
+    ]);
+    $election->runoffRounds()->create([
+        'round' => 3,
+        'candidate_ids' => [$charlie->id, $delta->id, $echo->id],
+        'seats' => 1,
+    ]);
+    castBallot($c1, [$charlie->id], round: 3);
+    castBallot($c2, [$charlie->id], round: 3);
+    castBallot($c3, [$delta->id], round: 3);
+
+    $results = ElectionResults::for($election->fresh());
+
+    expect($results->hasUnresolvedTie())->toBeFalse();
+    expect($results->runoffRounds()->pluck('round')->all())->toBe([2, 3]);
+    expect($results->electedBoard()->pluck('id')->sort()->values()->all())
+        ->toBe(collect([$alpha->id, $bravo->id, $charlie->id])->sort()->values()->all());
+});
+
+it('keeps the board incomplete when the latest runoff is still tied', function () {
+    $election = Election::current();
+    $election->update([
+        'candidate_threshold' => 3,
+        'candidate_min_choices' => 1,
+        'candidate_max_choices' => 3,
+        'mode' => Election::MODE_SELECT,
+    ]);
+    $alpha = Candidate::create(['name' => 'Alpha']);
+    $bravo = Candidate::create(['name' => 'Bravo']);
+    $charlie = Candidate::create(['name' => 'Charlie']);
+    $delta = Candidate::create(['name' => 'Delta']);
+    $echo = Candidate::create(['name' => 'Echo']);
+    [$c1, $c2, $c3] = makeCompanies(3);
+
+    castBallot($c1, [$alpha->id, $bravo->id, $charlie->id]);
+    castBallot($c2, [$alpha->id, $delta->id, $echo->id]);
+
+    $election->update([
+        'current_round' => 2,
+        'runoff_candidate_ids' => [$bravo->id, $charlie->id, $delta->id, $echo->id],
+        'runoff_seats' => 2,
+    ]);
+    $election->runoffRounds()->create([
+        'round' => 2,
+        'candidate_ids' => [$bravo->id, $charlie->id, $delta->id, $echo->id],
+        'seats' => 2,
+    ]);
+    castBallot($c1, [$bravo->id, $charlie->id], round: 2);
+    castBallot($c2, [$bravo->id, $delta->id], round: 2);
+    castBallot($c3, [$bravo->id, $echo->id], round: 2);
+
+    $election->update([
+        'current_round' => 3,
+        'runoff_candidate_ids' => [$charlie->id, $delta->id, $echo->id],
+        'runoff_seats' => 1,
+    ]);
+    $election->runoffRounds()->create([
+        'round' => 3,
+        'candidate_ids' => [$charlie->id, $delta->id, $echo->id],
+        'seats' => 1,
+    ]);
+    castBallot($c1, [$charlie->id], round: 3);
+    castBallot($c2, [$delta->id], round: 3);
+
+    $results = ElectionResults::for($election->fresh());
+    $tie = $results->pendingTie();
+
+    expect($results->hasUnresolvedTie())->toBeTrue();
+    expect($tie['seats'])->toBe(1);
+    expect($tie['tied']->pluck('id')->sort()->values()->all())
+        ->toBe(collect([$charlie->id, $delta->id])->sort()->values()->all());
+    expect($results->electedBoard()->pluck('id')->sort()->values()->all())
+        ->toBe(collect([$alpha->id, $bravo->id])->sort()->values()->all());
+});
+
 it('treats every candidate as elected in Mode B', function () {
     $election = Election::current();
     $election->update(['candidate_threshold' => 20, 'mode' => Election::MODE_AUTO]);
