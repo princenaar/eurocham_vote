@@ -49,7 +49,7 @@
         </div>
 
         <p class="mt-6 text-center text-xs text-slate-400">
-            Chambre des Investisseurs Européens au Sénégal · Réf. P01.EUROCHAM.2026
+            Chambre des Investisseurs Européens au Sénégal · Version 1
         </p>
     </div>
 </body>

@@ -38,17 +38,35 @@ class ElectionController extends Controller
                 ->withErrors(['election' => 'Les paramètres du scrutin sont verrouillés dès l’ouverture du vote.']);
         }
 
-        $data = $request->validate([
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'candidate_threshold' => [$election->isBoardVote() ? 'required' : 'nullable', 'integer', 'min:1', 'max:200'],
             'display_order' => ['nullable', 'integer', 'min:0', 'max:500'],
-        ], [
+        ];
+
+        if ($election->isBoardVote()) {
+            $rules['candidate_threshold'] = ['required', 'integer', 'min:1', 'max:200'];
+            $rules['candidate_min_choices'] = ['required', 'integer', 'min:1', 'max:200'];
+            $rules['candidate_max_choices'] = [
+                'required',
+                'integer',
+                'min:1',
+                'max:200',
+                'gte:candidate_min_choices',
+                'lte:candidate_threshold',
+            ];
+        }
+
+        $data = $request->validate($rules, [
             'name.required' => 'Le nom du scrutin est obligatoire.',
             'candidate_threshold.required' => 'Le nombre de sièges est obligatoire.',
+            'candidate_min_choices.required' => 'Le nombre minimum de choix est obligatoire.',
+            'candidate_max_choices.required' => 'Le nombre maximum de choix est obligatoire.',
+            'candidate_max_choices.gte' => 'Le maximum de choix doit être supérieur ou égal au minimum.',
+            'candidate_max_choices.lte' => 'Le maximum de choix ne peut pas dépasser le nombre de sièges.',
         ]);
 
         if (! $election->isBoardVote()) {
-            unset($data['candidate_threshold']);
+            unset($data['candidate_threshold'], $data['candidate_min_choices'], $data['candidate_max_choices']);
         }
 
         $election->update($data);

@@ -48,6 +48,8 @@ class EurochamE2ESeeder extends Seeder
                 'display_order' => 50,
                 'status' => Election::STATUS_DRAFT,
                 'candidate_threshold' => 20,
+                'candidate_min_choices' => 5,
+                'candidate_max_choices' => 20,
                 'current_round' => 1,
                 'runoff_candidate_ids' => null,
                 'runoff_seats' => null,

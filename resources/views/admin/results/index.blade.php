@@ -103,13 +103,9 @@
                             <td class="px-4 py-2 text-slate-500">{{ $row['rank'] }}</td>
                             <td class="px-4 py-2">
                                 <div class="flex items-center gap-3">
-                                    @if ($row['candidate']->photo_path)
-                                        <img src="{{ $row['candidate']->photoUrl() }}" alt="Photo de {{ $row['candidate']->name }}" class="h-9 w-9 rounded object-cover">
-                                    @else
-                                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-slate-100 text-xs font-semibold text-slate-500">
-                                            {{ mb_substr($row['candidate']->name, 0, 1) }}
-                                        </span>
-                                    @endif
+                                    <img src="{{ $row['candidate']->displayPhotoUrl() }}"
+                                         alt="{{ $row['candidate']->photo_path ? 'Photo de '.$row['candidate']->name : 'Image par défaut pour '.$row['candidate']->name }}"
+                                         class="h-9 w-9 shrink-0 rounded object-cover">
                                     <span class="font-medium text-slate-900">{{ $row['candidate']->name }}</span>
                                 </div>
                             </td>

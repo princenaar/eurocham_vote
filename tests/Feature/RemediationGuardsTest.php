@@ -19,6 +19,8 @@ function remediationReadyElection(): Election
     $election = Election::current();
     $election->update([
         'candidate_threshold' => 2,
+        'candidate_min_choices' => 2,
+        'candidate_max_choices' => 2,
         'qr_active' => true,
     ]);
 

@@ -21,6 +21,8 @@ function tiedModeAElection(): array
     $election = Election::current();
     $election->update([
         'candidate_threshold' => 2,
+        'candidate_min_choices' => 1,
+        'candidate_max_choices' => 2,
         'mode' => Election::MODE_SELECT,
         'status' => Election::STATUS_CLOSED,
         'window_open' => false,
@@ -100,6 +102,13 @@ it('restricts the runoff ballot to the tied candidates and the remaining seats',
     // A non-tied candidate (Alpha) cannot be chosen in the runoff.
     $this->post(route('vote.submit'), ['candidates' => [$alpha->id]])
         ->assertSessionHasErrors('candidates.0');
+    expect(Vote::query()->where('round', 2)->count())->toBe(0);
+
+    // The runoff has an exact count equal to the remaining seats.
+    $this->post(route('vote.submit'), ['candidates' => []])
+        ->assertSessionHasErrors('candidates');
+    $this->post(route('vote.submit'), ['candidates' => [$bravo->id, $charlie->id]])
+        ->assertSessionHasErrors('candidates');
     expect(Vote::query()->where('round', 2)->count())->toBe(0);
 
     // Exactly the remaining seat from the tied set is accepted, recorded in round 2.

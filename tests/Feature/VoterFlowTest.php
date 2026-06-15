@@ -13,13 +13,24 @@ use Illuminate\Support\Facades\Cache;
 
 /**
  * Configure a live Mode A scrutin: open window, threshold seats, and
- * (threshold + extra) candidates so the voter must pick exactly `threshold`.
+ * enough candidates to cross the Mode A threshold. By default the helper keeps
+ * legacy exact-count semantics for compact tests; range tests pass min/max.
  */
-function modeAElection(int $threshold = 3, int $candidates = 5): Election
+function modeAElection(
+    int $threshold = 3,
+    int $candidates = 5,
+    ?int $minChoices = null,
+    ?int $maxChoices = null,
+): Election
 {
+    $minChoices ??= $threshold;
+    $maxChoices ??= $threshold;
+
     $election = Election::current();
     $election->update([
         'candidate_threshold' => $threshold,
+        'candidate_min_choices' => $minChoices,
+        'candidate_max_choices' => $maxChoices,
         'status' => Election::STATUS_OPEN,
         'window_open' => true,
         'qr_active' => true,
@@ -96,13 +107,16 @@ it('lets an eligible company through to the Mode A ballot', function () {
         'first_name' => 'Awa',
     ])->assertRedirect(route('vote.ballot'));
 
-    $this->get(route('vote.ballot'))->assertOk()->assertViewIs('vote.ballot');
+    $this->get(route('vote.ballot'))
+        ->assertOk()
+        ->assertViewIs('vote.ballot')
+        ->assertSee('ordre d’inscription');
 });
 
-it('records a vote with exactly the required number of selections', function () {
-    $election = modeAElection(threshold: 3, candidates: 5);
+it('records a CA vote with the minimum allowed number of selections', function () {
+    modeAElection(threshold: 20, candidates: 21, minChoices: 5, maxChoices: 20);
     $company = eligibleCompany();
-    $chosen = Candidate::query()->take(3)->pluck('id')->all();
+    $chosen = Candidate::query()->take(5)->pluck('id')->all();
 
     $this->post(route('vote.identify'), [
         'company_id' => $company->id,
@@ -117,13 +131,32 @@ it('records a vote with exactly the required number of selections', function () 
     expect($vote)->not->toBeNull();
     expect($vote->reference_number)->not->toBeEmpty();
     expect($vote->is_proxy)->toBeFalse();
-    expect($vote->selections()->count())->toBe(3);
+    expect($vote->selections()->count())->toBe(5);
 
     // The confirmation screen renders and shows the reference number (rule 5).
     $this->get(route('vote.confirmation'))
         ->assertOk()
         ->assertViewIs('vote.confirmation')
         ->assertSee($vote->reference_number);
+});
+
+it('records a CA vote with the maximum allowed number of selections', function () {
+    modeAElection(threshold: 20, candidates: 21, minChoices: 5, maxChoices: 20);
+    $company = eligibleCompany();
+    $chosen = Candidate::query()->take(20)->pluck('id')->all();
+
+    $this->post(route('vote.identify'), [
+        'company_id' => $company->id,
+        'last_name' => 'Diop',
+        'first_name' => 'Awa',
+    ]);
+
+    $this->post(route('vote.submit'), ['candidates' => $chosen])
+        ->assertRedirect(route('vote.confirmation'));
+
+    $vote = Vote::query()->where('company_id', $company->id)->first();
+    expect($vote)->not->toBeNull();
+    expect($vote->selections()->count())->toBe(20);
 });
 
 it('records a proxy vote for the selected represented company', function () {
@@ -177,10 +210,10 @@ it('renders the review screen with the chosen candidates', function () {
         ->assertSee('Candidat 1');
 });
 
-it('rejects a Mode A ballot with fewer than the required selections', function () {
-    modeAElection(threshold: 3, candidates: 5);
+it('rejects a CA ballot below the minimum selection count', function () {
+    modeAElection(threshold: 20, candidates: 21, minChoices: 5, maxChoices: 20);
     $company = eligibleCompany();
-    $chosen = Candidate::query()->take(2)->pluck('id')->all();
+    $chosen = Candidate::query()->take(4)->pluck('id')->all();
 
     $this->post(route('vote.identify'), [
         'company_id' => $company->id,
@@ -194,10 +227,10 @@ it('rejects a Mode A ballot with fewer than the required selections', function (
     expect(Vote::count())->toBe(0);
 });
 
-it('rejects a Mode A ballot with more than the required selections', function () {
-    modeAElection(threshold: 3, candidates: 5);
+it('rejects a CA ballot above the maximum selection count', function () {
+    modeAElection(threshold: 20, candidates: 21, minChoices: 5, maxChoices: 20);
     $company = eligibleCompany();
-    $chosen = Candidate::query()->take(4)->pluck('id')->all();
+    $chosen = Candidate::query()->take(21)->pluck('id')->all();
 
     $this->post(route('vote.identify'), [
         'company_id' => $company->id,
@@ -239,6 +272,8 @@ it('short-circuits to the auto-election result in Mode B without a ballot', func
     $election = Election::current();
     $election->update([
         'candidate_threshold' => 20,
+        'candidate_min_choices' => 5,
+        'candidate_max_choices' => 20,
         'status' => Election::STATUS_OPEN,
         'window_open' => true,
         'qr_active' => true,

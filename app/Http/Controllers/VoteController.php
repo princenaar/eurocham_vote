@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\AssemblyCompany;
-use App\Models\Candidate;
 use App\Models\Election;
 use App\Models\QuestionResponse;
 use App\Models\Vote;
@@ -135,7 +134,7 @@ class VoteController extends Controller
             'representative' => $request->session()->get(self::SESSION_REP),
             'isProxy' => (bool) $request->session()->get(self::SESSION_PROXY, false),
             'candidates' => $election->ballotCandidates(),
-            'required' => $election->requiredSelections(),
+            'selectionRule' => $election->selectionRule(),
             'isRunoff' => $election->isRunoff(),
         ]);
     }
@@ -335,27 +334,40 @@ class VoteController extends Controller
      */
     private function validateSelections(Request $request, Election $election): array
     {
-        $required = $election->requiredSelections();
+        $selectionRule = $election->selectionRule();
         $allowed = $election->ballotCandidates()->pluck('id')->all();
 
         $validated = $request->validate([
             'candidates' => ['required', 'array'],
             'candidates.*' => ['integer', 'distinct', Rule::in($allowed)],
         ], [
-            'candidates.required' => "Vous devez sélectionner exactement {$required} candidat(s).",
+            'candidates.required' => $this->selectionErrorMessage($selectionRule),
             'candidates.*.in' => 'Candidat non éligible pour ce scrutin.',
         ]);
 
         $chosen = array_values(array_unique(array_map('intval', $validated['candidates'])));
+        $count = count($chosen);
 
-        if (count($chosen) !== $required) {
+        if ($count < $selectionRule['min'] || $count > $selectionRule['max']) {
             throw ValidationException::withMessages([
-                'candidates' => "Vous devez sélectionner exactement {$required} candidat(s) "
-                    .'(ni plus, ni moins).',
+                'candidates' => $this->selectionErrorMessage($selectionRule),
             ]);
         }
 
         return $chosen;
+    }
+
+    /**
+     * @param  array{min: int, max: int, exact: bool}  $selectionRule
+     */
+    private function selectionErrorMessage(array $selectionRule): string
+    {
+        if ($selectionRule['exact']) {
+            return "Vous devez sélectionner exactement {$selectionRule['min']} candidat(s) "
+                .'(ni plus, ni moins).';
+        }
+
+        return "Vous devez sélectionner entre {$selectionRule['min']} et {$selectionRule['max']} candidat(s).";
     }
 
     /**

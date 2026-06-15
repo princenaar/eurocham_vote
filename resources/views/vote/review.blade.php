@@ -28,13 +28,10 @@
                             <svg class="h-4 w-4 shrink-0 text-brand-700" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                             </svg>
-                            @if ($candidate->photo_path)
-                                <img src="{{ $candidate->photoUrl() }}" alt="Photo de {{ $candidate->name }}" class="h-10 w-10 rounded object-cover" data-testid="candidate-avatar">
-                            @else
-                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-slate-100 text-xs font-semibold text-slate-500">
-                                    {{ mb_substr($candidate->name, 0, 1) }}
-                                </span>
-                            @endif
+                            <img src="{{ $candidate->displayPhotoUrl() }}"
+                                 alt="{{ $candidate->photo_path ? 'Photo de '.$candidate->name : 'Image par défaut pour '.$candidate->name }}"
+                                 class="h-10 w-10 shrink-0 rounded object-cover"
+                                 data-testid="candidate-avatar">
                             <span class="min-w-0">
                                 <span class="block font-medium text-slate-800">{{ $candidate->name }}</span>
                                 <span class="block text-xs text-slate-500">{{ $candidate->assemblyCompany?->name }}</span>

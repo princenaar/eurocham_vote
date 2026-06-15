@@ -14,6 +14,8 @@ class Candidate extends Model
 {
     use HasFactory;
 
+    private const DEFAULT_PHOTO_PUBLIC_PATH = 'images/candidate-default.svg';
+
     protected $fillable = [
         'election_id',
         'assembly_company_id',
@@ -80,6 +82,24 @@ class Candidate extends Model
     public function photoUrl(): ?string
     {
         return $this->photo_path ? asset('storage/'.$this->photo_path) : null;
+    }
+
+    public function displayPhotoUrl(): string
+    {
+        return $this->photoUrl() ?? asset(self::DEFAULT_PHOTO_PUBLIC_PATH);
+    }
+
+    public function displayPhotoPathForPdf(): string
+    {
+        if ($this->photo_path) {
+            $path = storage_path('app/public/'.$this->photo_path);
+
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return public_path(self::DEFAULT_PHOTO_PUBLIC_PATH);
     }
 
     public function selections(): HasMany

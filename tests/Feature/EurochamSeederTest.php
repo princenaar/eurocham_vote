@@ -31,6 +31,8 @@ it('seeds the official EUROCHAM 2026 assembly votes companies and candidate avat
     $boardVote = $votes[2]->fresh();
     expect($boardVote->mode)->toBe(Election::MODE_SELECT);
     expect($boardVote->candidate_threshold)->toBe(20);
+    expect($boardVote->candidate_min_choices)->toBe(5);
+    expect($boardVote->candidate_max_choices)->toBe(20);
     expect($boardVote->candidates()->count())->toBe(21);
 
     $candidate = $boardVote->candidates()->first();

@@ -110,9 +110,9 @@ NESTLE SENEGAL;1;1;0
 NETLOGIK;1;1;0
 NEW LIFE CONTAINERS;1;1;0
 NKAC;1;1;0
-NOuiIA WCA SENEGAL;1;1;0
+NOKIA WCA SENEGAL;1;1;0
 NOUVELLES FRONTIERES SENEGAL & WEST AFRICA;1;1;0
-NOVAGO SENEGAL;1;1;0
+NOVAGO SENEGAL;1;1;0
 OBBO SA;1;1;0
 OINIS;1;1;0
 OLEA ASSURANCE;1;1;0
@@ -187,7 +187,7 @@ GROUPE ISM;0;1;0
 IBERIA;0;1;0
 ITO;0;1;0
 IWOL;0;1;0
-JOuiE-COOL;0;1;0
+JOKE-COOL;0;1;0
 KAJOU;0;1;0
 KOF-EXPERTS;0;0;0
 LABOREX;0;1;0
@@ -226,26 +226,26 @@ CSV;
 
     private const BOARD_CANDIDATES = <<<'CSV'
 François Cherpion;SSPT TOLSA
-Nicolas Soyere;Soyere Consulting
-Alain Nöel;Nouvelles Frontières
-Jérémie Petit;Oxygen Africa
-Fatoumata Ly;Bia Dakar
-Abdou Lo;Nokia
-Pascal Louchelart;CFAO Mobilty
+Nicolas Soyere;SOYERE CONSULTING
+Alain Nöel;NOUVELLES FRONTIERES SENEGAL & WEST AFRICA
+Jérémie Petit;OXYGEN AFRICA
+Fatoumata Ly;BIA DAKAR SARL
+Abdou Lo;NOKIA WCA SENEGAL
+Pascal Louchelart;CFAO MOBILITY
 Matthieu Coulon;CSTM
-Alain Masson;Ambiance Restauration Sénégal
-Frédéric Beaune;Les Spécialistes de l'Energie
-Florian Rapettit;NGE
-Olivier Bremond;Premium Sénégal
-Dame Sene;Eiffage Sénégal
-Cathy Suarez;Régie Immobilière Mugnier
-Ibrahima Ndao;Senoutils SAS
-Eric Binson;SOCAS SA
-Phillipe Lenormand;Archer Logistics
-Julien Malle;Concerto Sénégal
-Jeanne Malouf;Formarecrut
-Fabiola Kitoukona;Kasoumine
-Georges Amar;Bella Rocca
+Alain Masson;AMBIANCE
+Frédéric Beaune;LSE - Les Spécialistes de l'Energie
+Florian Rapetti;NGE
+Olivier Bremond;PREMIUM SENEGAL
+Dame Sene;EIFFAGE SENEGAL
+Cathy Suarez;REGIE IMMOBILIERE MUGNIER
+Ibrahima Ndao;SENOUTIL SAS
+Eric Binson;SOCAS
+Phillipe Lenormand;ARCHER TRANSIT ex ARCHER LOGISTICS
+Julien Malle;CONCERTO EX INSIGN
+Jeanne Malouf;FORMARECRUT SARL
+Fabiola Kitoukona;KSOUMINE
+Georges Amar;BELLA ROCCA
 CSV;
 
     public function run(): void
@@ -317,6 +317,8 @@ CSV;
                 'display_order' => 3,
                 'status' => Election::STATUS_DRAFT,
                 'candidate_threshold' => 20,
+                'candidate_min_choices' => 5,
+                'candidate_max_choices' => 20,
                 'current_round' => 1,
                 'runoff_candidate_ids' => null,
                 'runoff_seats' => null,

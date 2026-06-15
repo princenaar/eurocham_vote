@@ -21,6 +21,8 @@ class ElectionFactory extends Factory
             'type' => Election::TYPE_BOARD,
             'status' => Election::STATUS_DRAFT,
             'candidate_threshold' => 20,
+            'candidate_min_choices' => 5,
+            'candidate_max_choices' => 20,
             'current_round' => 1,
             'display_order' => 1,
             'window_open' => false,

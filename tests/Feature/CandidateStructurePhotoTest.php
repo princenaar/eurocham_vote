@@ -108,14 +108,16 @@ it('replaces and deletes candidate photos from public storage', function () {
     Storage::disk('public')->assertMissing($newPath);
 });
 
-it('shows candidate structures in ballot review and results', function () {
+it('shows candidate structures and default images in ballot review and results', function () {
     $election = Election::current();
     $election->update([
         'candidate_threshold' => 1,
-        'status' => Election::STATUS_OPEN,
-        'window_open' => true,
-        'qr_active' => true,
-        'active_slot' => Election::ACTIVE_SLOT_GLOBAL,
+        'candidate_min_choices' => 1,
+        'candidate_max_choices' => 1,
+        'status' => Election::STATUS_DRAFT,
+        'window_open' => false,
+        'qr_active' => false,
+        'active_slot' => null,
     ]);
 
     $structureA = candidateStructure($election, 'Structure Alpha');
@@ -127,6 +129,9 @@ it('shows candidate structures in ballot review and results', function () {
         'name' => 'Alpha',
         'display_order' => 1,
     ]);
+    expect($alpha->displayPhotoUrl())->toContain('images/candidate-default.svg');
+    expect($alpha->displayPhotoPathForPdf())->toBe(public_path('images/candidate-default.svg'));
+
     Candidate::create([
         'election_id' => $election->id,
         'assembly_company_id' => $structureB->id,
@@ -134,9 +139,16 @@ it('shows candidate structures in ballot review and results', function () {
         'display_order' => 2,
     ]);
     $election->syncModeFromCandidates();
+
+    $admin = User::factory()->create();
+    $this->actingAs($admin)->get(route('admin.candidates.edit', $alpha))
+        ->assertOk()
+        ->assertDontSee('Photo actuelle');
+
     $election->update([
         'status' => Election::STATUS_OPEN,
         'window_open' => true,
+        'qr_active' => true,
         'active_slot' => Election::ACTIVE_SLOT_GLOBAL,
     ]);
 
@@ -147,6 +159,11 @@ it('shows candidate structures in ballot review and results', function () {
         'dues_2025' => true,
     ]);
 
+    $this->actingAs($admin)->get(route('admin.candidates.index', ['election' => $election->id]))
+        ->assertOk()
+        ->assertSee('candidate-default.svg')
+        ->assertSee('Structure Alpha');
+
     $this->post(route('vote.identify'), [
         'company_id' => $voter->id,
         'last_name' => 'Diop',
@@ -155,11 +172,13 @@ it('shows candidate structures in ballot review and results', function () {
 
     $this->get(route('vote.ballot'))
         ->assertOk()
+        ->assertSee('candidate-default.svg')
         ->assertSee('Structure Alpha')
         ->assertSee('Structure Bravo');
 
     $this->post(route('vote.review'), ['candidates' => [$alpha->id]])
         ->assertOk()
+        ->assertSee('candidate-default.svg')
         ->assertSee('Structure Alpha');
 
     $this->post(route('vote.submit'), ['candidates' => [$alpha->id]])->assertRedirect();
@@ -173,11 +192,12 @@ it('shows candidate structures in ballot review and results', function () {
 
     $this->get(route('results.public', ['election' => $election->id]))
         ->assertOk()
+        ->assertSee('candidate-default.svg')
         ->assertSee('Structure Alpha');
 
-    $admin = User::factory()->create();
     $this->actingAs($admin)->get(route('admin.results.index', ['election' => $election->id]))
         ->assertOk()
+        ->assertSee('candidate-default.svg')
         ->assertSee('Structure Alpha');
 
     $this->actingAs($admin)->get(route('admin.results.excel', ['election' => $election->id]))->assertOk();

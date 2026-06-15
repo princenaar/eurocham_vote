@@ -19,7 +19,7 @@ class Election extends Model
     public const TYPE_QUESTIONS = 'questions';
     public const ACTIVE_SLOT_GLOBAL = 'global';
 
-    public const MODE_SELECT = 'A';   // > threshold candidates: voter picks exactly <threshold>.
+    public const MODE_SELECT = 'A';   // > threshold candidates: voter picks within configured limits.
     public const MODE_AUTO = 'B';     // <= threshold candidates: all auto-elected, no ballot.
 
     public const STATUS_DRAFT = 'draft';
@@ -37,6 +37,8 @@ class Election extends Model
         'status',
         'mode',
         'candidate_threshold',
+        'candidate_min_choices',
+        'candidate_max_choices',
         'current_round',
         'runoff_candidate_ids',
         'runoff_seats',
@@ -51,6 +53,8 @@ class Election extends Model
     {
         return [
             'candidate_threshold' => 'integer',
+            'candidate_min_choices' => 'integer',
+            'candidate_max_choices' => 'integer',
             'display_order' => 'integer',
             'current_round' => 'integer',
             'runoff_candidate_ids' => 'array',
@@ -74,6 +78,9 @@ class Election extends Model
             [
                 'name' => 'Élection du Conseil d’Administration 2026',
                 'status' => self::STATUS_DRAFT,
+                'candidate_threshold' => 20,
+                'candidate_min_choices' => 5,
+                'candidate_max_choices' => 20,
                 'current_round' => 1,
                 'display_order' => 1,
             ],
@@ -131,7 +138,7 @@ class Election extends Model
 
     /**
      * Resolve the scrutin mode from a candidate count (rule 4).
-     * > threshold => Mode A (select exactly threshold); <= threshold => Mode B (auto-elect).
+     * > threshold => Mode A (select within configured limits); <= threshold => Mode B (auto-elect).
      * Returns null when there are no candidates yet (mode undetermined).
      */
     public function resolveMode(int $candidateCount): ?string
@@ -172,12 +179,28 @@ class Election extends Model
     }
 
     /**
-     * Number of seats a Mode A voter must fill. In the main vote that is the threshold;
-     * in a runoff (round 2+) it is the number of contested seats (rule 4 + tiebreaker).
+     * Current ballot selection rule. In the main vote, voters choose within the
+     * configured range. In a runoff, they must choose exactly the remaining seats.
+     *
+     * @return array{min: int, max: int, exact: bool}
      */
+    public function selectionRule(): array
+    {
+        if ($this->isRunoff()) {
+            $required = (int) $this->runoff_seats;
+
+            return ['min' => $required, 'max' => $required, 'exact' => true];
+        }
+
+        $min = max(1, (int) $this->candidate_min_choices);
+        $max = max($min, (int) $this->candidate_max_choices);
+
+        return ['min' => $min, 'max' => $max, 'exact' => $min === $max];
+    }
+
     public function requiredSelections(): int
     {
-        return $this->isRunoff() ? (int) $this->runoff_seats : $this->candidate_threshold;
+        return $this->selectionRule()['max'];
     }
 
     /**
@@ -234,6 +257,7 @@ class Election extends Model
             && (int) ($this->current_round ?? 1) === 1
             && $this->qr_active
             && $this->candidates()->exists()
+            && ($this->mode !== self::MODE_SELECT || $this->candidates()->count() >= $this->selectionRule()['max'])
             && $this->assembly->eligibleCompanies()->exists()
             && (static::active()?->is($this) ?? true);
     }

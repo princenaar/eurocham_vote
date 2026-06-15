@@ -99,7 +99,7 @@
         {{-- Settings --}}
         <div class="bg-white rounded-lg border border-slate-200 p-5 lg:col-span-2">
             <h2 class="font-serif text-base font-semibold text-brand-800">Paramètres du scrutin</h2>
-            <form method="POST" action="{{ route('admin.election.update') }}" class="mt-4 grid gap-4 sm:grid-cols-2">
+            <form method="POST" action="{{ route('admin.election.update') }}" class="mt-4 grid gap-4 sm:grid-cols-3">
                 @csrf @method('PUT')
                 <input type="hidden" name="election_id" value="{{ $election->id }}">
                 <div>
@@ -118,12 +118,31 @@
                                @readonly(! $election->canEditConfiguration())
                                class="w-32 rounded-md border-slate-300 shadow-sm text-sm focus:border-brand-600 focus:ring-brand-600">
                     </div>
+                    <div>
+                        <label for="candidate_min_choices" class="block text-sm font-medium text-slate-700 mb-1">
+                            Choix minimum
+                        </label>
+                        <input id="candidate_min_choices" name="candidate_min_choices" type="number" min="1" max="200"
+                               value="{{ old('candidate_min_choices', $election->candidate_min_choices) }}" required
+                               @readonly(! $election->canEditConfiguration())
+                               class="w-32 rounded-md border-slate-300 shadow-sm text-sm focus:border-brand-600 focus:ring-brand-600">
+                    </div>
+                    <div>
+                        <label for="candidate_max_choices" class="block text-sm font-medium text-slate-700 mb-1">
+                            Choix maximum
+                        </label>
+                        <input id="candidate_max_choices" name="candidate_max_choices" type="number" min="1" max="200"
+                               value="{{ old('candidate_max_choices', $election->candidate_max_choices) }}" required
+                               @readonly(! $election->canEditConfiguration())
+                               class="w-32 rounded-md border-slate-300 shadow-sm text-sm focus:border-brand-600 focus:ring-brand-600">
+                    </div>
                 @endif
-                <div class="sm:col-span-2 text-xs text-slate-500">
+                <div class="sm:col-span-3 text-xs text-slate-500">
                     @if ($election->isBoardVote())
                         {{ $candidateCount }} candidat(s) enregistré(s) →
                         @if ($election->mode === \App\Models\Election::MODE_SELECT)
-                            Mode A (sélection de {{ $election->candidate_threshold }}).
+                            Mode A (sélection de {{ $election->candidate_min_choices }} à {{ $election->candidate_max_choices }} candidat(s);
+                            {{ $election->candidate_threshold }} siège(s) à pourvoir).
                         @elseif ($election->mode === \App\Models\Election::MODE_AUTO)
                             Mode B (élection automatique).
                         @else
@@ -133,7 +152,7 @@
                         {{ $questionCount }} question(s) enregistrée(s). Les électeurs répondent Oui, Non ou Abstention.
                     @endif
                 </div>
-                <div class="sm:col-span-2">
+                <div class="sm:col-span-3">
                     <button type="submit"
                             @disabled(! $election->canEditConfiguration())
                             class="rounded-md bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-300">

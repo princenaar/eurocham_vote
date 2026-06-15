@@ -59,7 +59,7 @@
                     <span class="text-xs text-slate-400">Chambre des Investisseurs Européens au Sénégal</span>
                 </div>
                 <p class="text-xs text-slate-400">
-                    Assemblée Générale du 18 juin 2026 · Réf. P01.EUROCHAM.2026
+                    Assemblée Générale du 18 juin 2026 · Version 1
                 </p>
             </div>
         </footer>

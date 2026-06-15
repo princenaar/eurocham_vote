@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * The candidates chosen on a Mode A ballot (exactly 20 per vote — CLAUDE.md rule 4).
+ * The candidates chosen on a Mode A ballot (within the configured CA limits).
  * Kept in a separate table so individual choices stay decoupled from the voter's
  * identity except for admin audit (rule 7).
  */

@@ -5,7 +5,8 @@
 @section('content')
     @php
         $modeLabel = match ($election->mode) {
-            \App\Models\Election::MODE_SELECT => 'Mode A — sélection de ' . $election->candidate_threshold,
+            \App\Models\Election::MODE_SELECT => 'Mode A — sélection de '
+                . $election->candidate_min_choices . ' à ' . $election->candidate_max_choices,
             \App\Models\Election::MODE_AUTO => 'Mode B — élection automatique',
             default => 'Non déterminé (aucun candidat)',
         };

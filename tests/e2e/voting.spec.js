@@ -84,25 +84,35 @@ test('vote 4 questionnaire: R9 single resolution', async ({ page }) => {
     await expect(page.getByText('Résultat : Oui')).toBeVisible();
 });
 
-test('CA Mode A: 21 candidates, exact 20 selections, avatars, confirmation and duplicate block', async ({ page }) => {
+test('CA Mode A: 21 candidates, 5 to 20 selections, avatars, confirmation and duplicate block', async ({ page }) => {
     await adminLogin(page);
     await openElection(page, 'Vote 3 — Renouvellement du Conseil d’Administration', BOARD_TYPE);
 
     await page.goto('/vote');
     await identifyCompany(page, 'AGL GROUP');
     await expect(page.getByTestId('board-ballot')).toBeVisible();
-    await expect(page.getByTestId('selection-counter')).toContainText('0 / 20');
+    await expect(page.getByTestId('candidate-order-note')).toContainText('ordre d’inscription');
+    await expect(page.getByText('entre 5 et 20')).toBeVisible();
     await expect(page.getByTestId('candidate-checkbox')).toHaveCount(21);
     await expect(page.getByTestId('candidate-avatar')).toHaveCount(21);
     await expectCandidateImagesLoaded(page);
     await expect(page.getByTestId('board-review-submit')).toBeDisabled();
 
     const candidates = page.getByTestId('candidate-checkbox');
-    for (let index = 0; index < 20; index += 1) {
+    for (let index = 0; index < 4; index += 1) {
+        await candidates.nth(index).check();
+    }
+
+    await expect(page.getByTestId('board-review-submit')).toBeDisabled();
+    await candidates.nth(4).check();
+    await expect(page.getByTestId('board-review-submit')).toBeEnabled();
+
+    for (let index = 5; index < 20; index += 1) {
         await candidates.nth(index).check();
     }
 
     await expect(page.getByTestId('selection-counter')).toContainText('20 / 20');
+    await expect(candidates.nth(20)).toBeDisabled();
     await expect(page.getByTestId('board-review-submit')).toBeEnabled();
     await page.getByTestId('board-review-submit').click();
 

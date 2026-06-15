@@ -34,7 +34,7 @@
                 <td>
                     <h1>Résultats — {{ $election->name }}</h1>
                     <div class="muted">
-                        EUROCHAM Sénégal · Réf. P01.EUROCHAM.2026 ·
+                        EUROCHAM Sénégal · Version 1 ·
                         Généré le {{ $generatedAt->format('d/m/Y H:i') }}
                     </div>
                 </td>
@@ -49,7 +49,7 @@
         @elseif ($election->mode === \App\Models\Election::MODE_AUTO)
             Mode B : élection automatique de tous les candidats.
         @elseif ($election->mode === \App\Models\Election::MODE_SELECT)
-            Mode A : sélection de {{ $election->candidate_threshold }} candidats par votant.
+            Mode A : sélection de {{ $election->candidate_min_choices }} à {{ $election->candidate_max_choices }} candidats par votant.
         @endif
     </p>
 
@@ -100,11 +100,7 @@
                     <tr>
                         <td>{{ $row['rank'] }}</td>
                         <td>
-                            @if ($row['candidate']->photo_path && file_exists(storage_path('app/public/'.$row['candidate']->photo_path)))
-                                <img src="{{ storage_path('app/public/'.$row['candidate']->photo_path) }}" alt="Photo" style="height:32px; width:32px; object-fit:cover;">
-                            @else
-                                —
-                            @endif
+                            <img src="{{ $row['candidate']->displayPhotoPathForPdf() }}" alt="Photo" style="height:32px; width:32px; object-fit:cover;">
                         </td>
                         <td>{{ $row['candidate']->name }}</td>
                         <td>{{ $row['candidate']->assemblyCompany?->name }}</td>

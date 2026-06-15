@@ -3,7 +3,13 @@
 @section('title', 'Bulletin de vote — EUROCHAM AG 2026')
 
 @section('content')
-    <div class="max-w-2xl mx-auto py-8" x-data="ballot({{ $required }})" data-testid="board-ballot">
+    @php
+        $selectionMin = $selectionRule['min'];
+        $selectionMax = $selectionRule['max'];
+        $selectionExact = $selectionRule['exact'];
+    @endphp
+
+    <div class="max-w-2xl mx-auto py-8" x-data="ballot({{ $selectionMin }}, {{ $selectionMax }})" data-testid="board-ballot">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <h2 class="font-serif text-3xl font-semibold text-brand-800">Bulletin de vote</h2>
@@ -19,24 +25,33 @@
         @if ($isRunoff)
             <div class="mt-3 rounded-md bg-indigo-50 border border-indigo-200 px-4 py-3 text-sm text-indigo-800">
                 <strong>Vote de départage.</strong> Ce tour départage les candidats à égalité
-                pour {{ $required }} siège(s) restant(s).
+                pour {{ $selectionMin }} siège(s) restant(s).
             </div>
         @endif
 
         <div class="mt-3 rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-            Sélectionnez <strong>exactement {{ $required }}</strong> candidat(s). Le bouton de
-            validation s’active uniquement lorsque {{ $required }} candidats sont cochés.
+            @if ($selectionExact)
+                Sélectionnez <strong>exactement {{ $selectionMin }}</strong> candidat(s). Le bouton de
+                validation s’active uniquement lorsque {{ $selectionMin }} candidats sont cochés.
+            @else
+                Sélectionnez <strong>entre {{ $selectionMin }} et {{ $selectionMax }}</strong> candidat(s).
+                Le bouton de validation s’active dès que {{ $selectionMin }} candidats sont cochés.
+            @endif
             @if ($isProxy)
                 <br>Ce bulletin est enregistré comme vote par procuration pour l’entreprise sélectionnée.
             @endif
         </div>
 
-        {{-- Sticky live counter (UX only — the server re-checks the exact count). --}}
+        <p class="mt-3 text-sm text-slate-600" data-testid="candidate-order-note">
+            Les candidats sont affichés par ordre d’inscription.
+        </p>
+
+        {{-- Sticky live counter (UX only — the server re-checks the count). --}}
         <div class="sticky top-0 z-10 mt-4 flex items-center justify-between rounded-md border border-slate-200 bg-white px-4 py-3 shadow-sm" data-testid="selection-counter">
             <span class="text-sm text-slate-600">Sélectionnés</span>
             <span class="font-mono text-sm font-semibold"
-                  :class="count === required ? 'text-brand-700' : 'text-slate-900'">
-                <span x-text="count"></span> / {{ $required }}
+                  :class="isValid ? 'text-brand-700' : 'text-slate-900'">
+                <span x-text="count"></span> / {{ $selectionMax }}
             </span>
         </div>
 
@@ -53,17 +68,14 @@
                                 name="candidates[]"
                                 value="{{ $candidate->id }}"
                                 @change="toggle($event)"
-                                :disabled="count >= required && !isChecked({{ $candidate->id }})"
+                                :disabled="count >= max && !isChecked({{ $candidate->id }})"
                                 class="h-4 w-4 rounded border-slate-300 text-brand-700 focus:ring-brand-600 disabled:opacity-40"
                                 data-testid="candidate-checkbox"
                             >
-                            @if ($candidate->photo_path)
-                                <img src="{{ $candidate->photoUrl() }}" alt="Photo de {{ $candidate->name }}" class="h-12 w-12 rounded object-cover" data-testid="candidate-avatar">
-                            @else
-                                <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-slate-100 text-sm font-semibold text-slate-500">
-                                    {{ mb_substr($candidate->name, 0, 1) }}
-                                </span>
-                            @endif
+                            <img src="{{ $candidate->displayPhotoUrl() }}"
+                                 alt="{{ $candidate->photo_path ? 'Photo de '.$candidate->name : 'Image par défaut pour '.$candidate->name }}"
+                                 class="h-12 w-12 shrink-0 rounded object-cover"
+                                 data-testid="candidate-avatar">
                             <span class="min-w-0">
                                 <span class="block font-medium text-slate-800">{{ $candidate->name }}</span>
                                 <span class="block text-xs text-slate-500">{{ $candidate->assemblyCompany?->name }}</span>
@@ -76,28 +88,33 @@
             <button
                 type="submit"
                 data-testid="board-review-submit"
-                :disabled="count !== required"
+                :disabled="!isValid"
                 class="mt-6 w-full rounded-md bg-brand-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300"
             >
-                <span x-show="count === required">Vérifier mon vote</span>
-                <span x-show="count !== required" x-cloak>
-                    Sélectionnez <span x-text="required - count"></span> candidat(s) de plus
+                <span x-show="isValid">Vérifier mon vote</span>
+                <span x-show="!isValid && count < min" x-cloak>
+                    Sélectionnez <span x-text="min - count"></span> candidat(s) de plus
+                </span>
+                <span x-show="!isValid && count > max" x-cloak>
+                    Retirez <span x-text="count - max"></span> candidat(s)
                 </span>
             </button>
         </form>
     </div>
 
     <script>
-        function ballot(required) {
+        function ballot(min, max) {
             return {
-                required,
+                min,
+                max,
                 selected: new Set(),
                 get count() { return this.selected.size; },
+                get isValid() { return this.count >= this.min && this.count <= this.max; },
                 isChecked(id) { return this.selected.has(id); },
                 toggle(event) {
                     const id = parseInt(event.target.value, 10);
                     if (event.target.checked) {
-                        if (this.selected.size >= this.required) {
+                        if (this.selected.size >= this.max) {
                             event.target.checked = false;
                             return;
                         }

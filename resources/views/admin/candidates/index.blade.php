@@ -9,7 +9,7 @@
             @if ($election->mode === \App\Models\Election::MODE_AUTO)
                 <span class="text-amber-700">Mode B : tous élus automatiquement (≤ {{ $election->candidate_threshold }}).</span>
             @elseif ($election->mode === \App\Models\Election::MODE_SELECT)
-                <span class="text-slate-700">Mode A : les votants sélectionnent {{ $election->candidate_threshold }} candidats.</span>
+                <span class="text-slate-700">Mode A : les votants sélectionnent entre {{ $election->candidate_min_choices }} et {{ $election->candidate_max_choices }} candidats.</span>
             @endif
         </p>
         @if ($election->canEditConfiguration())
@@ -41,13 +41,9 @@
                     <tr>
                         <td class="px-4 py-2 text-slate-500">{{ $candidate->display_order }}</td>
                         <td class="px-4 py-2">
-                            @if ($candidate->photo_path)
-                                <img src="{{ $candidate->photoUrl() }}" alt="Photo de {{ $candidate->name }}" class="h-10 w-10 rounded object-cover">
-                            @else
-                                <span class="flex h-10 w-10 items-center justify-center rounded bg-slate-100 text-xs font-semibold text-slate-500">
-                                    {{ mb_substr($candidate->name, 0, 1) }}
-                                </span>
-                            @endif
+                            <img src="{{ $candidate->displayPhotoUrl() }}"
+                                 alt="{{ $candidate->photo_path ? 'Photo de '.$candidate->name : 'Image par défaut pour '.$candidate->name }}"
+                                 class="h-10 w-10 rounded object-cover">
                         </td>
                         <td class="px-4 py-2 font-medium text-slate-900">{{ $candidate->name }}</td>
                         <td class="px-4 py-2 text-slate-600">{{ $candidate->assemblyCompany?->name }}</td>

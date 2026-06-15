@@ -32,6 +32,8 @@ class SimulationElectionSeeder extends Seeder
                 [
                     'status' => Election::STATUS_CLOSED,
                     'candidate_threshold' => 20,
+                    'candidate_min_choices' => 5,
+                    'candidate_max_choices' => 20,
                     'current_round' => 1,
                     'window_open' => false,
                     'qr_active' => true,

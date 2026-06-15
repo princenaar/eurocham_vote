@@ -22,6 +22,8 @@ return new class extends Migration
             $table->string('status')->default('draft');
             $table->enum('mode', ['A', 'B'])->nullable();
             $table->unsignedSmallInteger('candidate_threshold')->default(20);
+            $table->unsignedSmallInteger('candidate_min_choices')->default(5);
+            $table->unsignedSmallInteger('candidate_max_choices')->default(20);
             $table->unsignedSmallInteger('current_round')->default(1);
             $table->json('runoff_candidate_ids')->nullable();
             $table->unsignedSmallInteger('runoff_seats')->nullable();
