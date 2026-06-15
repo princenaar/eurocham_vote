@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Candidate;
 use App\Models\Election;
 use App\Models\ElectionQuestion;
+use App\Models\ElectionRunoffRound;
 use App\Models\Vote;
 use App\Models\VoteSelection;
 use Illuminate\Support\Collection;
@@ -30,7 +31,7 @@ class ElectionResults
      *
      * @return Collection<int, array{candidate: Candidate, votes: int, rank: int}>
      */
-    public function ranking(int $round): Collection
+    public function ranking(int $round, ?array $candidateIds = null): Collection
     {
         $counts = VoteSelection::query()
             ->join('votes', 'votes.id', '=', 'vote_selections.vote_id')
@@ -40,7 +41,7 @@ class ElectionResults
             ->selectRaw('vote_selections.candidate_id as cid, COUNT(*) as total')
             ->pluck('total', 'cid');
 
-        $candidates = $this->candidatesForRound($round);
+        $candidates = $this->candidatesForRound($round, $candidateIds);
 
         return $candidates
             ->map(fn (Candidate $c) => [
@@ -70,8 +71,8 @@ class ElectionResults
 
     /**
      * The final elected Board. Mode B → all candidates. Mode A → round-1 clear winners
-     * plus, for any contested seats, the winners of the latest runoff (if it resolved
-     * the tie). Candidates still tied are left off until a runoff settles them.
+     * plus winners from each runoff round until the contested seats are fully resolved.
+     * Candidates still tied are left off until a later runoff settles them.
      *
      * @return Collection<int, Candidate>
      */
@@ -88,15 +89,18 @@ class ElectionResults
         [$winners, $tie] = $this->resolveContest($this->mainRanking(), $this->election->candidate_threshold);
         $board = $winners;
 
-        if ($tie !== null && $this->election->isRunoff()) {
-            [$runoffWinners] = $this->resolveContest(
-                $this->ranking($this->election->current_round),
-                (int) $this->election->runoff_seats,
-            );
-            $board = $board->merge($runoffWinners);
+        if ($tie !== null) {
+            foreach ($this->runoffRounds() as $runoffRound) {
+                $board = $board->merge($runoffRound['winners']);
+                $tie = $runoffRound['tie'];
+
+                if ($tie === null) {
+                    break;
+                }
+            }
         }
 
-        return $board->values();
+        return $board->unique('id')->values();
     }
 
     /**
@@ -127,17 +131,51 @@ class ElectionResults
             return null;
         }
 
-        if (! $this->election->isRunoff()) {
-            return $tie;
+        foreach ($this->runoffRounds() as $runoffRound) {
+            $tie = $runoffRound['tie'];
+
+            if ($tie === null) {
+                return null;
+            }
         }
 
-        // A runoff is underway — report its own boundary tie, if any (else resolved).
-        [, $runoffTie] = $this->resolveContest(
-            $this->ranking($this->election->current_round),
-            (int) $this->election->runoff_seats,
-        );
+        return $tie;
+    }
 
-        return $runoffTie;
+    /**
+     * All tiebreaker rounds with their historical candidate scope and ranking.
+     *
+     * @return Collection<int, array{
+     *     round: int,
+     *     seats: int,
+     *     candidate_ids: array<int, int>,
+     *     ranking: Collection<int, array{candidate: Candidate, votes: int, rank: int}>,
+     *     winners: Collection<int, Candidate>,
+     *     tie: array{tied: Collection<int, Candidate>, seats: int, votes: int}|null,
+     *     votes_cast: int
+     * }>
+     */
+    public function runoffRounds(): Collection
+    {
+        return $this->runoffRoundDefinitions()
+            ->map(function (ElectionRunoffRound $runoffRound) {
+                $round = (int) $runoffRound->round;
+                $seats = (int) $runoffRound->seats;
+                $candidateIds = array_values(array_map('intval', $runoffRound->candidate_ids ?? []));
+                $ranking = $this->ranking($round, $candidateIds);
+                [$winners, $tie] = $this->resolveContest($ranking, $seats);
+
+                return [
+                    'round' => $round,
+                    'seats' => $seats,
+                    'candidate_ids' => $candidateIds,
+                    'ranking' => $ranking,
+                    'winners' => $winners,
+                    'tie' => $tie,
+                    'votes_cast' => $this->votesCast($round),
+                ];
+            })
+            ->values();
     }
 
     /**
@@ -150,6 +188,10 @@ class ElectionResults
      */
     private function resolveContest(Collection $ranking, int $seats): array
     {
+        if ($seats <= 0) {
+            return [collect(), null];
+        }
+
         if ($ranking->count() <= $seats) {
             // Not a real contest (≤ seats candidates) — everyone wins, no tie.
             return [$ranking->pluck('candidate')->values(), null];
@@ -172,15 +214,67 @@ class ElectionResults
     /**
      * @return Collection<int, Candidate>
      */
-    private function candidatesForRound(int $round): Collection
+    private function candidatesForRound(int $round, ?array $candidateIds = null): Collection
     {
         $query = $this->election->candidates();
 
-        if ($round > 1 && ! empty($this->election->runoff_candidate_ids)) {
-            $query->whereIn('id', $this->election->runoff_candidate_ids);
+        if ($round > 1) {
+            $candidateIds ??= $this->candidateIdsForRound($round);
+
+            if ($candidateIds === null) {
+                return collect();
+            }
+
+            $query->whereIn('id', $candidateIds);
         }
 
         return $query->get();
+    }
+
+    /**
+     * @return Collection<int, ElectionRunoffRound>
+     */
+    private function runoffRoundDefinitions(): Collection
+    {
+        $rounds = $this->election->runoffRounds()->get();
+
+        if ($this->election->isRunoff()) {
+            $currentRound = (int) $this->election->current_round;
+            $hasCurrentRound = $rounds->contains(
+                fn (ElectionRunoffRound $round) => (int) $round->round === $currentRound
+            );
+
+            if (! $hasCurrentRound) {
+                $rounds->push($this->syntheticCurrentRunoffRound());
+            }
+        }
+
+        return $rounds->sortBy('round')->values();
+    }
+
+    /**
+     * @return array<int, int>|null
+     */
+    private function candidateIdsForRound(int $round): ?array
+    {
+        $definition = $this->runoffRoundDefinitions()
+            ->first(fn (ElectionRunoffRound $runoffRound) => (int) $runoffRound->round === $round);
+
+        if ($definition === null) {
+            return null;
+        }
+
+        return array_values(array_map('intval', $definition->candidate_ids ?? []));
+    }
+
+    private function syntheticCurrentRunoffRound(): ElectionRunoffRound
+    {
+        return new ElectionRunoffRound([
+            'election_id' => $this->election->id,
+            'round' => (int) $this->election->current_round,
+            'candidate_ids' => array_values(array_map('intval', $this->election->runoff_candidate_ids ?? [])),
+            'seats' => (int) $this->election->runoff_seats,
+        ]);
     }
 
     /**

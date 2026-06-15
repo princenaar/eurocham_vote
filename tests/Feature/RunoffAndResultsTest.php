@@ -41,6 +41,67 @@ function tiedModeAElection(): array
     return [$election->fresh(), [$alpha, $bravo, $charlie]];
 }
 
+function multiRoundRunoffElection(bool $resolveRound3 = true): array
+{
+    $election = Election::current();
+    $election->update([
+        'candidate_threshold' => 3,
+        'candidate_min_choices' => 1,
+        'candidate_max_choices' => 3,
+        'mode' => Election::MODE_SELECT,
+        'status' => Election::STATUS_CLOSED,
+        'window_open' => false,
+        'qr_active' => true,
+        'closed_at' => now(),
+    ]);
+
+    $alpha = Candidate::create(['name' => 'Alpha', 'display_order' => 1]);
+    $bravo = Candidate::create(['name' => 'Bravo', 'display_order' => 2]);
+    $charlie = Candidate::create(['name' => 'Charlie', 'display_order' => 3]);
+    $delta = Candidate::create(['name' => 'Delta', 'display_order' => 4]);
+    $echo = Candidate::create(['name' => 'Echo', 'display_order' => 5]);
+    [$c1, $c2, $c3] = makeCompanies(3);
+
+    castBallot($c1, [$alpha->id, $bravo->id, $charlie->id]);
+    castBallot($c2, [$alpha->id, $delta->id, $echo->id]);
+
+    $election->update([
+        'current_round' => 2,
+        'runoff_candidate_ids' => [$bravo->id, $charlie->id, $delta->id, $echo->id],
+        'runoff_seats' => 2,
+    ]);
+    $election->runoffRounds()->create([
+        'round' => 2,
+        'candidate_ids' => [$bravo->id, $charlie->id, $delta->id, $echo->id],
+        'seats' => 2,
+    ]);
+    castBallot($c1, [$bravo->id, $charlie->id], round: 2);
+    castBallot($c2, [$bravo->id, $delta->id], round: 2);
+    castBallot($c3, [$bravo->id, $echo->id], round: 2);
+
+    $election->update([
+        'current_round' => 3,
+        'runoff_candidate_ids' => [$charlie->id, $delta->id, $echo->id],
+        'runoff_seats' => 1,
+    ]);
+    $election->runoffRounds()->create([
+        'round' => 3,
+        'candidate_ids' => [$charlie->id, $delta->id, $echo->id],
+        'seats' => 1,
+    ]);
+
+    if ($resolveRound3) {
+        castBallot($c1, [$charlie->id], round: 3);
+        castBallot($c2, [$charlie->id], round: 3);
+        castBallot($c3, [$delta->id], round: 3);
+    } else {
+        castBallot($c1, [$charlie->id], round: 3);
+        castBallot($c2, [$delta->id], round: 3);
+    }
+
+    return [$election->fresh(), [$alpha, $bravo, $charlie, $delta, $echo]];
+}
+
 it('launches a runoff for the contested seat when the window is closed', function () {
     [$election, [$alpha, $bravo, $charlie]] = tiedModeAElection();
     $admin = User::factory()->create();
@@ -171,6 +232,45 @@ it('renders the admin results page and exports with the round-aware data', funct
 
     $this->actingAs($admin)->get(route('admin.results.excel'))->assertOk();
     $this->actingAs($admin)->get(route('admin.results.pdf'))->assertOk();
+});
+
+it('shows every runoff round in admin and public results', function () {
+    [$election] = multiRoundRunoffElection();
+    $admin = User::factory()->create();
+
+    $this->actingAs($admin)->get(route('admin.results.index', ['election' => $election->id]))
+        ->assertOk()
+        ->assertSee('Vote de départage — tour 2')
+        ->assertSee('Vote de départage — tour 3');
+
+    $this->get(route('results.public', ['election' => $election->id]))
+        ->assertOk()
+        ->assertSee('Vote de départage — tour 2')
+        ->assertSee('Vote de départage — tour 3');
+
+    $this->actingAs($admin)->get(route('admin.results.excel', ['election' => $election->id]))->assertOk();
+    $this->actingAs($admin)->get(route('admin.results.pdf', ['election' => $election->id]))->assertOk();
+});
+
+it('can launch another runoff after round 3 closes with a remaining tie', function () {
+    [$election, [, , $charlie, $delta]] = multiRoundRunoffElection(resolveRound3: false);
+    $admin = User::factory()->create();
+
+    $this->actingAs($admin)->get(route('admin.results.index', ['election' => $election->id]))
+        ->assertOk()
+        ->assertSee('Vote de départage — tour 2')
+        ->assertSee('Vote de départage — tour 3')
+        ->assertSee('Lancer le départage');
+
+    $this->actingAs($admin)
+        ->post(route('admin.election.runoff'), ['election_id' => $election->id])
+        ->assertRedirect(route('admin.election.edit'));
+
+    $election->refresh();
+    expect($election->current_round)->toBe(4);
+    expect($election->runoff_seats)->toBe(1);
+    expect($election->runoff_candidate_ids)->toMatchArray([$charlie->id, $delta->id]);
+    expect($election->runoffRounds()->where('round', 4)->exists())->toBeTrue();
 });
 
 it('shows the auto-elected board publicly in Mode B after close', function () {

@@ -11,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 
 /**
  * Per-candidate results for the official Excel report (CLAUDE.md rule 8): main-vote
- * ranking with the consolidated "elected" flag from the single ElectionResults source.
+ * and runoff rankings with the consolidated "elected" flag from ElectionResults.
  */
 class ResultsExport implements FromCollection, WithHeadings, WithMapping
 {
@@ -29,9 +29,18 @@ class ResultsExport implements FromCollection, WithHeadings, WithMapping
     {
         $results = ElectionResults::for($this->election);
 
-        return $this->election->isQuestionsVote()
-            ? $results->questionResults()
-            : $results->mainRanking();
+        if ($this->election->isQuestionsVote()) {
+            return $results->questionResults();
+        }
+
+        $mainRows = $results->mainRanking()
+            ->map(fn (array $row) => ['round_label' => 'Tour principal'] + $row);
+
+        $runoffRows = $results->runoffRounds()
+            ->flatMap(fn (array $runoffRound) => $runoffRound['ranking']
+                ->map(fn (array $row) => ['round_label' => 'Tour '.$runoffRound['round']] + $row));
+
+        return $mainRows->concat($runoffRows)->values();
     }
 
     public function headings(): array
@@ -40,7 +49,7 @@ class ResultsExport implements FromCollection, WithHeadings, WithMapping
             return ['Question', 'Oui', 'Non', 'Abstention', '% Oui', '% Non', 'Résultat'];
         }
 
-        return ['Rang', 'Candidat', 'Structure', 'Voix', 'Élu'];
+        return ['Tour', 'Rang', 'Candidat', 'Structure', 'Voix', 'Élu'];
     }
 
     /**
@@ -61,6 +70,7 @@ class ResultsExport implements FromCollection, WithHeadings, WithMapping
         }
 
         return [
+            $row['round_label'] ?? 'Tour principal',
             $row['rank'],
             $row['candidate']->name,
             $row['candidate']->assemblyCompany?->name,

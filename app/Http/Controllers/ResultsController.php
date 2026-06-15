@@ -49,7 +49,7 @@ class ResultsController extends Controller
             'hasUnresolvedTie' => $results->hasUnresolvedTie(),
             'pendingTie' => $results->pendingTie(),
             'isRunoff' => $election->isRunoff(),
-            'runoffRanking' => $election->isRunoff() ? $results->ranking($election->current_round) : null,
+            'runoffRounds' => $results->runoffRounds(),
             'votesCast' => $results->votesCast(1),
         ]);
     }
