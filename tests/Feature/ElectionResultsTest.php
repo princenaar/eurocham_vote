@@ -1,43 +1,13 @@
 <?php
 
 use App\Models\Candidate;
-use App\Models\Company;
 use App\Models\Election;
-use App\Models\Vote;
-use App\Models\VoteSelection;
 use App\Support\ElectionResults;
 
 /**
  * Results consolidation + boundary-tie detection (CLAUDE.md rule 8 + tiebreaker).
  * Correctness-critical: these figures decide who sits on the Board.
  */
-
-/** Cast a round-`$round` ballot for `$company` choosing the given candidate ids. */
-function castBallot(Company $company, array $candidateIds, int $round = 1): Vote
-{
-    $vote = Vote::create([
-        'company_id' => $company->id,
-        'round' => $round,
-        'reference_number' => 'REF-'.$company->id.'-'.$round,
-        'voted_at' => now(),
-    ]);
-
-    foreach ($candidateIds as $id) {
-        VoteSelection::create(['vote_id' => $vote->id, 'candidate_id' => $id]);
-    }
-
-    return $vote;
-}
-
-function makeCompanies(int $n): array
-{
-    return collect(range(1, $n))->map(fn ($i) => Company::create([
-        'name' => "Société {$i}",
-        'normalized_name' => "societe {$i}",
-        'survey_2025' => true,
-        'dues_2025' => true,
-    ]))->all();
-}
 
 it('ranks candidates by round-1 votes, descending', function () {
     $election = Election::current();

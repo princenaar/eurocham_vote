@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\Company;
+use App\Models\Vote;
+use App\Models\VoteSelection;
 use Tests\TestCase;
 
 /*
@@ -17,6 +20,53 @@ use Tests\TestCase;
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
+
+function castBallot(Company $company, array $candidateIds, int $round = 1): Vote
+{
+    $vote = Vote::create([
+        'company_id' => $company->id,
+        'round' => $round,
+        'reference_number' => 'REF-'.$company->id.'-'.$round,
+        'voted_at' => now(),
+    ]);
+
+    foreach ($candidateIds as $id) {
+        VoteSelection::create(['vote_id' => $vote->id, 'candidate_id' => $id]);
+    }
+
+    return $vote;
+}
+
+function makeCompanies(int $n): array
+{
+    return collect(range(1, $n))->map(fn ($i) => Company::create([
+        'name' => "Société {$i}",
+        'normalized_name' => "societe {$i}",
+        'survey_2025' => true,
+        'dues_2025' => true,
+    ]))->all();
+}
+
+function eligibleCompany(string $name = 'ACME SARL'): Company
+{
+    return Company::create([
+        'name' => $name,
+        'normalized_name' => Company::normalizeName($name),
+        'survey_2025' => true,
+        'dues_2025' => true,
+    ]);
+}
+
+function ineligibleCompany(string $name = 'INELIGIBLE SA'): Company
+{
+    return Company::create([
+        'name' => $name,
+        'normalized_name' => Company::normalizeName($name),
+        'survey_2025' => false,
+        'dues_2025' => false,
+        'new_member_2026' => false,
+    ]);
+}
 
 /*
 |--------------------------------------------------------------------------

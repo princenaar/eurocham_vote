@@ -14,6 +14,8 @@ use Illuminate\View\View;
 
 class CandidateController extends Controller
 {
+    private const PUBLIC_IMAGE_PATH_PREFIX = 'images/';
+
     public function index(): View
     {
         $election = $this->selectedElection();
@@ -149,7 +151,7 @@ class CandidateController extends Controller
 
     private function deletePhoto(Candidate $candidate): void
     {
-        if ($candidate->photo_path) {
+        if ($candidate->photo_path && ! str_starts_with($candidate->photo_path, self::PUBLIC_IMAGE_PATH_PREFIX)) {
             Storage::disk('public')->delete($candidate->photo_path);
         }
     }

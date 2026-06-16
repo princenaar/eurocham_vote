@@ -6,9 +6,7 @@ use Database\Seeders\Eurocham2026Seeder;
 use Database\Seeders\EurochamE2ESeeder;
 use Illuminate\Support\Facades\Storage;
 
-it('seeds the official EUROCHAM 2026 assembly votes companies and candidate avatars', function () {
-    Storage::fake('public');
-
+it('seeds the official EUROCHAM 2026 assembly votes companies and candidate photos', function () {
     $this->seed(Eurocham2026Seeder::class);
 
     $assembly = Assembly::query()->where('reference', 'P01.EUROCHAM.2026')->first();
@@ -35,9 +33,17 @@ it('seeds the official EUROCHAM 2026 assembly votes companies and candidate avat
     expect($boardVote->candidate_max_choices)->toBe(20);
     expect($boardVote->candidates()->count())->toBe(21);
 
-    $candidate = $boardVote->candidates()->first();
-    expect($candidate->photo_path)->not->toBeNull();
-    Storage::disk('public')->assertExists($candidate->photo_path);
+    $candidate = $boardVote->candidates()->where('name', 'François Cherpion')->firstOrFail();
+    expect($candidate->photo_path)->toBe('images/candidate-photos/eurocham-2026/francois-cherpion.png');
+    expect($candidate->displayPhotoUrl())->toContain('images/candidate-photos/eurocham-2026/francois-cherpion.png');
+    expect($candidate->displayPhotoPathForPdf())->toBe(public_path($candidate->photo_path));
+    expect(file_exists($candidate->displayPhotoPathForPdf()))->toBeTrue();
+
+    $fabiola = $boardVote->candidates()->where('name', 'Fabiola Kitoukona')->firstOrFail();
+    expect($fabiola->photo_path)->toBe('images/candidate-photos/eurocham-2026/fabiola-kitoukona.png');
+    expect($fabiola->displayPhotoUrl())->toContain('images/candidate-photos/eurocham-2026/fabiola-kitoukona.png');
+
+    expect($boardVote->candidates()->where('name', 'Philippe Lenormand')->exists())->toBeTrue();
 });
 
 it('seeds a browser-test Mode B board vote without replacing the official Mode A vote', function () {

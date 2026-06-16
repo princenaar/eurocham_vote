@@ -16,6 +16,8 @@ class Candidate extends Model
 
     private const DEFAULT_PHOTO_PUBLIC_PATH = 'images/candidate-default.svg';
 
+    private const PUBLIC_IMAGE_PATH_PREFIX = 'images/';
+
     protected $fillable = [
         'election_id',
         'assembly_company_id',
@@ -81,7 +83,15 @@ class Candidate extends Model
 
     public function photoUrl(): ?string
     {
-        return $this->photo_path ? asset('storage/'.$this->photo_path) : null;
+        if (! $this->photo_path) {
+            return null;
+        }
+
+        if (str_starts_with($this->photo_path, self::PUBLIC_IMAGE_PATH_PREFIX)) {
+            return asset($this->photo_path);
+        }
+
+        return asset('storage/'.$this->photo_path);
     }
 
     public function displayPhotoUrl(): string
@@ -92,7 +102,9 @@ class Candidate extends Model
     public function displayPhotoPathForPdf(): string
     {
         if ($this->photo_path) {
-            $path = storage_path('app/public/'.$this->photo_path);
+            $path = str_starts_with($this->photo_path, self::PUBLIC_IMAGE_PATH_PREFIX)
+                ? public_path($this->photo_path)
+                : storage_path('app/public/'.$this->photo_path);
 
             if (file_exists($path)) {
                 return $path;

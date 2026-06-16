@@ -9,12 +9,14 @@ use App\Models\Company;
 use App\Models\Election;
 use App\Models\ElectionQuestion;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class Eurocham2026Seeder extends Seeder
 {
     private const ASSEMBLY_REFERENCE = 'P01.EUROCHAM.2026';
+
+    private const OFFICIAL_CANDIDATE_PHOTO_PREFIX = 'images/candidate-photos/eurocham-2026/';
+
+    private const LEGACY_GENERATED_PHOTO_PREFIX = 'candidate-photos/eurocham-2026/';
 
     private const COMPANY_ROWS = <<<'CSV'
 ALDELIA;0;0;1
@@ -180,10 +182,10 @@ FAMY SENEGAL;0;1;0
 FLUICONNECTO SENEGAL;0;0;0
 GB FOODS;0;1;0
 GERMANI WEST AFRICA;0;1;0
-GRIMALDI SENEGAL;0;1;0
+GRIMALDI SENEGAL;1;1;0
 GRIPS;0;0;0
-GROUPE CF-ID HR PARTNER;0;1;0
-GROUPE ISM;0;1;0
+GROUPE CF-ID HR PARTNER;1;1;0
+GROUPE ISM;1;1;0
 IBERIA;0;1;0
 ITO;0;1;0
 IWOL;0;1;0
@@ -202,23 +204,23 @@ PYXIS SUPPORT SARL;0;1;0
 SADE SENEGAL SA;0;1;0
 SAEZ CONSULTING;0;1;0
 Safety Expertise Sénégal;0;1;0
-SATLX IT SERVICES DAKAR;0;1;0
-SEA INVEST SENEGAL AGENCY;0;1;0
-SENEGAL FLEURS;0;1;0
-SENEGAL TOURS;0;1;0
-SERVTEC Sénégal;0;1;0
-SH PROPERTIES SENEGAL;0;1;0
-SOA-SORAM OUEST AFRICA;0;1;0
-SOBOA - Société des Brasseries de l'Ouest Africain;0;1;0
+SATLX IT SERVICES DAKAR;1;1;0
+SEA INVEST SENEGAL AGENCY;1;1;0
+SENEGAL FLEURS;1;1;0
+SENEGAL TOURS;1;1;0
+SERVTEC Sénégal;1;1;0
+SH PROPERTIES SENEGAL;1;1;0
+SOA-SORAM OUEST AFRICA;1;1;0
+SOBOA - Société des Brasseries de l'Ouest Africain;1;1;0
 SOCIUM JOB;0;1;0
 SOLEVO SENEGAL;0;1;0
-SURICATE SOLUTIONS SN;0;1;0
+SURICATE SOLUTIONS SN;1;1;0
 Teranga Security Operations;0;1;0
 TERROU BI;0;0;0
 TOLERIE REMORQUES COMBEDIMANCHE;0;1;0
 TOM - Terminal des Opérations Maritimes SA;0;1;0
 TOTAL E&P SENEGAL;0;1;0
-TOTAL SENEGAL;0;1;0
+TOTAL SENEGAL;1;1;0
 USP GROUP;0;1;0
 VIGASSISTANCE SA;0;1;0
 YAS ex SENTEL GSM - FREE;0;0;0
@@ -241,12 +243,36 @@ Dame Sene;EIFFAGE SENEGAL
 Cathy Suarez;REGIE IMMOBILIERE MUGNIER
 Ibrahima Ndao;SENOUTIL SAS
 Eric Binson;SOCAS
-Phillipe Lenormand;ARCHER TRANSIT ex ARCHER LOGISTICS
+Philippe Lenormand;ARCHER TRANSIT ex ARCHER LOGISTICS
 Julien Malle;CONCERTO EX INSIGN
 Jeanne Malouf;FORMARECRUT SARL
 Fabiola Kitoukona;KSOUMINE
 Georges Amar;BELLA ROCCA
 CSV;
+
+    private const BOARD_CANDIDATE_PHOTOS = [
+        'François Cherpion' => 'images/candidate-photos/eurocham-2026/francois-cherpion.png',
+        'Nicolas Soyere' => 'images/candidate-photos/eurocham-2026/nicolas-soyere.jpg',
+        'Alain Nöel' => 'images/candidate-photos/eurocham-2026/alain-noel.jpg',
+        'Jérémie Petit' => 'images/candidate-photos/eurocham-2026/jeremie-petit.jpeg',
+        'Fatoumata Ly' => 'images/candidate-photos/eurocham-2026/fatoumata-ly.jpg',
+        'Abdou Lo' => 'images/candidate-photos/eurocham-2026/abdou-lo.jpg',
+        'Pascal Louchelart' => 'images/candidate-photos/eurocham-2026/pascal-louchelart.jpg',
+        'Matthieu Coulon' => 'images/candidate-photos/eurocham-2026/matthieu-coulon.jpeg',
+        'Alain Masson' => 'images/candidate-photos/eurocham-2026/alain-masson.jpeg',
+        'Frédéric Beaune' => 'images/candidate-photos/eurocham-2026/frederic-beaune.jpg',
+        'Florian Rapetti' => 'images/candidate-photos/eurocham-2026/florian-rapetti.png',
+        'Olivier Bremond' => 'images/candidate-photos/eurocham-2026/olivier-bremond.jpg',
+        'Dame Sene' => 'images/candidate-photos/eurocham-2026/dame-sene.jpg',
+        'Cathy Suarez' => 'images/candidate-photos/eurocham-2026/cathy-suarez.jpeg',
+        'Ibrahima Ndao' => 'images/candidate-photos/eurocham-2026/ibrahima-ndao.jpeg',
+        'Eric Binson' => 'images/candidate-photos/eurocham-2026/eric-binson.jpg',
+        'Philippe Lenormand' => 'images/candidate-photos/eurocham-2026/philippe-lenormand.jpg',
+        'Julien Malle' => 'images/candidate-photos/eurocham-2026/julien-malle.png',
+        'Jeanne Malouf' => 'images/candidate-photos/eurocham-2026/jeanne-malouf.jpg',
+        'Fabiola Kitoukona' => 'images/candidate-photos/eurocham-2026/fabiola-kitoukona.png',
+        'Georges Amar' => 'images/candidate-photos/eurocham-2026/georges-amar.jpeg',
+    ];
 
     public function run(): void
     {
@@ -332,21 +358,18 @@ CSV;
 
         foreach ($this->parseCsv(self::BOARD_CANDIDATES) as $index => [$name, $structureName]) {
             $structure = $this->ensureCandidateStructure($assembly, $structureName);
-            $photoPath = $this->avatarPath($name);
+            $photoPath = $this->candidatePhotoPath($name);
 
-            if (! Storage::disk('public')->exists($photoPath)) {
-                Storage::disk('public')->put($photoPath, $this->avatarSvg($name, $index));
-            }
+            $candidate = Candidate::query()
+                ->where('election_id', $election->id)
+                ->whereIn('name', $this->candidateNameLookup($name))
+                ->first() ?? new Candidate(['election_id' => $election->id]);
 
-            $candidate = Candidate::query()->firstOrNew([
-                'election_id' => $election->id,
-                'name' => $name,
-            ]);
-
+            $candidate->name = $name;
             $candidate->assembly_company_id = $structure->id;
             $candidate->display_order = $index + 1;
 
-            if (! $candidate->photo_path || str_starts_with($candidate->photo_path, 'candidate-photos/eurocham-2026/')) {
+            if (! $candidate->photo_path || $this->isSeederManagedPhotoPath($candidate->photo_path)) {
                 $candidate->photo_path = $photoPath;
             }
 
@@ -410,44 +433,26 @@ CSV;
             ->all();
     }
 
-    private function avatarPath(string $name): string
+    private function candidatePhotoPath(string $name): ?string
     {
-        return 'candidate-photos/eurocham-2026/'.Str::slug($name).'.svg';
+        return self::BOARD_CANDIDATE_PHOTOS[$name] ?? null;
     }
 
-    private function avatarSvg(string $name, int $index): string
+    /**
+     * @return array<int, string>
+     */
+    private function candidateNameLookup(string $name): array
     {
-        $palette = [
-            ['#0f766e', '#ccfbf1'],
-            ['#1d4ed8', '#dbeafe'],
-            ['#7c2d12', '#ffedd5'],
-            ['#6d28d9', '#ede9fe'],
-            ['#be123c', '#ffe4e6'],
-            ['#0369a1', '#e0f2fe'],
-        ];
-        [$background, $foreground] = $palette[$index % count($palette)];
-        $initials = htmlspecialchars($this->initials($name), ENT_QUOTES | ENT_XML1, 'UTF-8');
-
-        return <<<SVG
-<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" role="img" aria-label="Avatar {$initials}">
-  <rect width="240" height="240" rx="32" fill="{$background}"/>
-  <circle cx="120" cy="88" r="42" fill="{$foreground}" opacity="0.9"/>
-  <path d="M48 204c10-44 41-68 72-68s62 24 72 68" fill="{$foreground}" opacity="0.9"/>
-  <text x="120" y="132" text-anchor="middle" font-family="Arial, sans-serif" font-size="54" font-weight="700" fill="{$background}">{$initials}</text>
-</svg>
-SVG;
+        return match ($name) {
+            'Philippe Lenormand' => [$name, 'Phillipe Lenormand'],
+            default => [$name],
+        };
     }
 
-    private function initials(string $name): string
+    private function isSeederManagedPhotoPath(string $path): bool
     {
-        $parts = collect(preg_split('/\s+/u', trim($name)))
-            ->filter()
-            ->values();
-
-        return $parts
-            ->take($parts->count() > 1 ? 2 : 1)
-            ->map(fn (string $part) => mb_strtoupper(mb_substr($part, 0, 1)))
-            ->implode('');
+        return str_starts_with($path, self::OFFICIAL_CANDIDATE_PHOTO_PREFIX)
+            || str_starts_with($path, self::LEGACY_GENERATED_PHOTO_PREFIX);
     }
 
     /**

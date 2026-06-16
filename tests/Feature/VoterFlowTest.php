@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Candidate;
-use App\Models\Company;
 use App\Models\Election;
 use App\Models\Vote;
 use Illuminate\Support\Facades\Cache;
@@ -42,27 +41,6 @@ function modeAElection(
     $election->syncModeFromCandidates();
 
     return $election->fresh();
-}
-
-function eligibleCompany(string $name = 'ACME SARL'): Company
-{
-    return Company::create([
-        'name' => $name,
-        'normalized_name' => Company::normalizeName($name),
-        'survey_2025' => true,
-        'dues_2025' => true,
-    ]);
-}
-
-function ineligibleCompany(string $name = 'INELIGIBLE SA'): Company
-{
-    return Company::create([
-        'name' => $name,
-        'normalized_name' => Company::normalizeName($name),
-        'survey_2025' => false,
-        'dues_2025' => false,
-        'new_member_2026' => false,
-    ]);
 }
 
 it('shows the closed message when the voting window is shut', function () {
